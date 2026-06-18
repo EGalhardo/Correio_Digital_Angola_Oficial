@@ -1,0 +1,8 @@
+{
+  "name": "Correio Digital de Angola (CDA)",
+  "description": "Ecossistema integrado de Identidade e Correspondência Digital. Conecta Cidadãos, Instituições (AGT) e Segurança Nacional (SOC) num fluxo bidirecional de emissão, recebimento e auditoria em tempo real.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
