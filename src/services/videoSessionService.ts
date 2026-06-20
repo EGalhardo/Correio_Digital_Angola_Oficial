@@ -1,9 +1,26 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ * 
+ * Video Session Service - Enhanced Video Attendance Backend
+ * Supports all app modes with real-time features, quality metrics, and notifications
+ */
+
 import { supabase } from '../lib/supabaseClient';
 import { hasValidSupabaseKeys } from './supabaseService';
 import { VideoSession, VideoSessionParticipant, VideoSessionEvent } from '../types';
 
-// Pre-seeded Mock Video Sessions for a pristine showcase experience
-const INITIAL_MOCK_SESSIONS: VideoSession[] = [
+// Extended session interface for enhanced features
+export interface VideoSessionExtended extends VideoSession {
+  agenda?: string;
+  notes?: string;
+  duration?: number;
+  quality?: 'excellent' | 'good' | 'poor';
+  participantCount?: number;
+}
+
+// Pre-seeded Mock Video Sessions with comprehensive data
+const INITIAL_MOCK_SESSIONS: VideoSessionExtended[] = [
   {
     id: 'vs-1',
     roomName: 'cda-video-agt-nif-40502',
@@ -13,10 +30,14 @@ const INITIAL_MOCK_SESSIONS: VideoSession[] = [
     status: 'disponivel',
     hostBi: 'INST-AGT-0220',
     hostName: 'Dr. Valeriano Mendes (AGT)',
-    guestBi: '005204192LA048', // Edlasio's BI
+    guestBi: '005204192LA048',
     guestName: 'Edlasio Galhardo',
     scheduledFor: 'Hoje às 14:30',
     createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+    agenda: 'Verificar status do NIF, apresentar documentos pendentes e finalizar regularização.',
+    notes: 'Cliente já possui马尾收据 de solicitação anterior.',
+    quality: 'excellent',
+    participantCount: 2
   },
   {
     id: 'vs-2',
@@ -32,6 +53,11 @@ const INITIAL_MOCK_SESSIONS: VideoSession[] = [
     scheduledFor: 'Ontem às 10:00',
     createdAt: new Date(Date.now() - 86400000).toISOString(),
     closedAt: new Date(Date.now() - 86400000 + 1800000).toISOString(),
+    duration: 1800,
+    agenda: 'Validação de identidade para emissão de passaporte especial diplomático.',
+    notes: 'Sessão concluída com sucesso. Documentos validados.',
+    quality: 'good',
+    participantCount: 2
   },
   {
     id: 'vs-3',
@@ -45,6 +71,26 @@ const INITIAL_MOCK_SESSIONS: VideoSession[] = [
     guestName: 'Edlasio Galhardo',
     scheduledFor: 'Amanhã às 09:15',
     createdAt: new Date().toISOString(),
+    agenda: 'Consultar requisitos para visto de trabalho e documentação necessária.',
+    quality: 'excellent',
+    participantCount: 1
+  },
+  {
+    id: 'vs-4',
+    roomName: 'cda-video-minist-financas-112',
+    subject: 'Orientação sobre Declaração de IRS 2026',
+    associatedProtocol: 'CDA-2026-77341',
+    status: 'em_curso',
+    hostBi: 'INST-MF-0089',
+    hostName: 'Dra. Maria do Carmo (Ministério das Finanças)',
+    guestBi: '005204192LA048',
+    guestName: 'Edlasio Galhardo',
+    scheduledFor: 'Agora',
+    createdAt: new Date(Date.now() - 900000).toISOString(),
+    agenda: 'Esclarecimento sobre deduções fiscais e prazos de entrega.',
+    duration: 900,
+    quality: 'excellent',
+    participantCount: 2
   }
 ];
 
@@ -82,13 +128,22 @@ const INITIAL_MOCK_EVENTS: VideoSessionEvent[] = [
     eventType: 'encerrada',
     bi: 'INST-SME-0034',
     userName: 'Superintendente Carla Neto (SME)',
-    description: 'A sessão de vídeo foi concluída e documentada com sucesso.',
+    description: 'A sessão de vídeo foi concluída e documentada com sucesso. Duração total: 30 minutos.',
     timestamp: new Date(Date.now() - 86400000 + 1800000).toISOString(),
   }
 ];
 
-// Helper to load/save offline local state
-const getLocalSessions = (): VideoSession[] => {
+// Notification system
+export interface VideoSessionNotification {
+  id: string;
+  sessionId: string;
+  type: 'reminder' | 'status_change' | 'participant_update' | 'quality_alert';
+  message: string;
+  timestamp: string;
+  read: boolean;
+}
+
+const getLocalSessions = (): VideoSessionExtended[] => {
   const data = localStorage.getItem('cda_video_sessions');
   if (data) {
     try { return JSON.parse(data); } catch (e) { /* ignore */ }
@@ -97,7 +152,7 @@ const getLocalSessions = (): VideoSession[] => {
   return INITIAL_MOCK_SESSIONS;
 };
 
-const saveLocalSessions = (sessions: VideoSession[]) => {
+const saveLocalSessions = (sessions: VideoSessionExtended[]) => {
   localStorage.setItem('cda_video_sessions', JSON.stringify(sessions));
 };
 
@@ -114,11 +169,23 @@ const saveLocalEvents = (events: VideoSessionEvent[]) => {
   localStorage.setItem('cda_video_session_events', JSON.stringify(events));
 };
 
+const getLocalNotifications = (): VideoSessionNotification[] => {
+  const data = localStorage.getItem('cda_video_notifications');
+  if (data) {
+    try { return JSON.parse(data); } catch (e) { /* ignore */ }
+  }
+  return [];
+};
+
+const saveLocalNotifications = (notifications: VideoSessionNotification[]) => {
+  localStorage.setItem('cda_video_notifications', JSON.stringify(notifications));
+};
+
 export const VideoSessionService = {
   /**
-   * Lists all video sessions
+   * Lists all video sessions with enhanced metadata
    */
-  async listSessions(): Promise<VideoSession[]> {
+  async listSessions(): Promise<VideoSessionExtended[]> {
     const local = getLocalSessions();
     if (!hasValidSupabaseKeys()) {
       return local;
@@ -131,8 +198,7 @@ export const VideoSessionService = {
         
       if (error) throw error;
       if (data && data.length > 0) {
-        // Map postgres snake_case to typescript camelCase
-        const mapped: VideoSession[] = data.map((d: any) => ({
+        const mapped: VideoSessionExtended[] = data.map((d: any) => ({
           id: d.id,
           roomName: d.room_name || d.roomName,
           subject: d.subject,
@@ -146,6 +212,11 @@ export const VideoSessionService = {
           scheduledFor: d.scheduled_for || d.scheduledFor,
           createdAt: d.created_at || d.createdAt,
           closedAt: d.closed_at || d.closedAt,
+          agenda: d.agenda,
+          notes: d.notes,
+          duration: d.duration,
+          quality: d.quality,
+          participantCount: d.participant_count || 2
         }));
         return mapped;
       }
@@ -156,9 +227,9 @@ export const VideoSessionService = {
   },
 
   /**
-   * Retrieves a single video session
+   * Retrieves a single video session with full details
    */
-  async getSession(id: string): Promise<VideoSession | null> {
+  async getSession(id: string): Promise<VideoSessionExtended | null> {
     const local = getLocalSessions();
     const foundLocal = local.find(s => s.id === id) || null;
     if (!hasValidSupabaseKeys()) {
@@ -187,6 +258,11 @@ export const VideoSessionService = {
           scheduledFor: data.scheduled_for || data.scheduledFor,
           createdAt: data.created_at || data.createdAt,
           closedAt: data.closed_at || data.closedAt,
+          agenda: data.agenda,
+          notes: data.notes,
+          duration: data.duration,
+          quality: data.quality,
+          participantCount: data.participant_count || 2
         };
       }
     } catch (e) {
@@ -196,23 +272,23 @@ export const VideoSessionService = {
   },
 
   /**
-   * Creates a new video session
+   * Creates a new video session with enhanced metadata
    */
-  async createSession(session: Omit<VideoSession, 'id' | 'createdAt'>): Promise<VideoSession> {
+  async createSession(session: Omit<VideoSessionExtended, 'id' | 'createdAt' | 'quality' | 'participantCount'>): Promise<VideoSessionExtended> {
     const id = 'vs-' + Math.random().toString(36).substr(2, 9);
     const createdAt = new Date().toISOString();
-    const newSession: VideoSession = {
+    const newSession: VideoSessionExtended = {
       ...session,
       id,
       createdAt,
+      quality: 'excellent',
+      participantCount: 2
     };
 
-    // Update local storage first
     const local = getLocalSessions();
     local.unshift(newSession);
     saveLocalSessions(local);
 
-    // Sync to Supabase in background or try
     if (hasValidSupabaseKeys()) {
       try {
         await supabase.from('video_sessions').insert([{
@@ -228,13 +304,16 @@ export const VideoSessionService = {
           guest_name: session.guestName,
           scheduled_for: session.scheduledFor,
           created_at: createdAt,
+          agenda: (session as any).agenda || null,
+          notes: (session as any).notes || null,
+          quality: 'excellent',
+          participant_count: 2
         }]);
       } catch (err) {
         console.warn('Error saving session to Supabase, fallback to client state:', err);
       }
     }
 
-    // Add initialization event as standard
     await this.addSessionEvent(
       id, 
       'criada', 
@@ -243,23 +322,37 @@ export const VideoSessionService = {
       `Sessão criada e agendada: "${session.subject}" com ${session.guestName}.`
     );
 
+    this.createNotification(id, 'reminder', `Nova sessão de videoatendimento agendada: ${session.subject}`);
+
     return newSession;
   },
 
   /**
-   * Updates the status of a video session
+   * Updates the status of a video session with automatic event logging
    */
-  async updateSessionStatus(id: string, status: VideoSession['status']): Promise<VideoSession | null> {
+  async updateSessionStatus(id: string, status: VideoSession['status']): Promise<VideoSessionExtended | null> {
     const local = getLocalSessions();
     const index = local.findIndex(s => s.id === id);
     if (index === -1) return null;
 
-    const closedAt = (status === 'concluida' || status === 'cancelada') ? new Date().toISOString() : undefined;
-    const updated = {
-      ...local[index],
+    const now = new Date().toISOString();
+    const prevSession = local[index];
+    
+    let duration = prevSession.duration;
+    if (status === 'concluida' || status === 'cancelada') {
+      const startTime = new Date(prevSession.createdAt).getTime();
+      const endTime = Date.now();
+      duration = Math.floor((endTime - startTime) / 1000);
+    }
+
+    const updated: VideoSessionExtended = {
+      ...prevSession,
       status,
-      closedAt,
+      closedAt: (status === 'concluida' || status === 'cancelada') ? now : undefined,
+      duration: duration || prevSession.duration,
+      quality: status === 'em_curso' ? 'excellent' : prevSession.quality
     };
+    
     local[index] = updated;
     saveLocalSessions(local);
 
@@ -269,7 +362,8 @@ export const VideoSessionService = {
           .from('video_sessions')
           .update({ 
             status,
-            closed_at: closedAt || null
+            closed_at: (status === 'concluida' || status === 'cancelada') ? now : null,
+            duration: duration || null
           })
           .eq('id', id);
       } catch (err) {
@@ -277,15 +371,23 @@ export const VideoSessionService = {
       }
     }
 
-    // Add corresponding event
-    const eventType = status === 'em_curso' ? 'iniciada' : status === 'concluida' ? 'encerrada' : status === 'cancelada' ? 'cancelada' : 'agendada';
+    const eventDescriptions: Record<string, string> = {
+      em_curso: 'A sessão foi iniciada e está em curso.',
+      concluida: `Sessão concluída com sucesso. Duração total: ${this.formatDuration(duration || 0)}.`,
+      cancelada: 'A sessão foi cancelada.',
+      agendada: 'Sessão agendada para o horário especificado.',
+      disponivel: 'Sessão disponível e aguardando participantes.'
+    };
+
     await this.addSessionEvent(
       id,
-      eventType,
+      status === 'em_curso' ? 'iniciada' : status === 'concluida' ? 'encerrada' : status === 'cancelada' ? 'cancelada' : 'agendada',
       updated.hostBi,
       updated.hostName,
-      `Estado da sessão atualizado para "${status}".`
+      eventDescriptions[status] || `Estado da sessão atualizado para "${status}".`
     );
+
+    this.createNotification(id, 'status_change', `Sessão atualizada: ${eventDescriptions[status]}`);
 
     return updated;
   },
@@ -332,6 +434,14 @@ export const VideoSessionService = {
       }
     }
 
+    if (eventType === 'entrada' || eventType === 'saida') {
+      this.createNotification(
+        sessionId, 
+        'participant_update', 
+        `${userName} ${eventType === 'entrada' ? 'entrou na' : 'saiu da'} sessão`
+      );
+    }
+
     return newEvent;
   },
 
@@ -366,5 +476,195 @@ export const VideoSessionService = {
       console.warn('Supabase event query failed, serving fallback:', e);
     }
     return localEvents;
+  },
+
+  /**
+   * Creates a notification for session updates
+   */
+  async createNotification(
+    sessionId: string,
+    type: VideoSessionNotification['type'],
+    message: string
+  ): Promise<VideoSessionNotification> {
+    const notification: VideoSessionNotification = {
+      id: 'vsn-' + Math.random().toString(36).substr(2, 9),
+      sessionId,
+      type,
+      message,
+      timestamp: new Date().toISOString(),
+      read: false
+    };
+
+    const notifications = getLocalNotifications();
+    notifications.unshift(notification);
+    
+    if (notifications.length > 50) {
+      notifications.splice(50);
+    }
+    
+    saveLocalNotifications(notifications);
+    return notification;
+  },
+
+  /**
+   * Gets all notifications for a session
+   */
+  async getSessionNotifications(sessionId: string): Promise<VideoSessionNotification[]> {
+    return getLocalNotifications().filter(n => n.sessionId === sessionId);
+  },
+
+  /**
+   * Gets all session notifications
+   */
+  async getAllSessionNotifications(): Promise<VideoSessionNotification[]> {
+    return getLocalNotifications();
+  },
+
+  /**
+   * Marks a notification as read
+   */
+  async markNotificationRead(notificationId: string): Promise<void> {
+    const notifications = getLocalNotifications();
+    const index = notifications.findIndex(n => n.id === notificationId);
+    if (index !== -1) {
+      notifications[index].read = true;
+      saveLocalNotifications(notifications);
+    }
+  },
+
+  /**
+   * Gets unread notification count
+   */
+  async getUnreadNotificationCount(): Promise<number> {
+    return getLocalNotifications().filter(n => !n.read).length;
+  },
+
+  /**
+   * Updates session quality metrics
+   */
+  async updateSessionQuality(sessionId: string, quality: 'excellent' | 'good' | 'poor', latency: number): Promise<void> {
+    const local = getLocalSessions();
+    const index = local.findIndex(s => s.id === sessionId);
+    if (index !== -1) {
+      local[index].quality = quality;
+      saveLocalSessions(local);
+
+      if (quality === 'poor') {
+        this.createNotification(sessionId, 'quality_alert', `Qualidade da ligação reduzida: ${latency}ms de latência`);
+      }
+    }
+  },
+
+  /**
+   * Gets session statistics
+   */
+  async getSessionStats(): Promise<{
+    total: number;
+    active: number;
+    completed: number;
+    cancelled: number;
+    scheduled: number;
+    averageDuration: number;
+  }> {
+    const sessions = await this.listSessions();
+    
+    return {
+      total: sessions.length,
+      active: sessions.filter(s => s.status === 'em_curso' || s.status === 'disponivel').length,
+      completed: sessions.filter(s => s.status === 'concluida').length,
+      cancelled: sessions.filter(s => s.status === 'cancelada').length,
+      scheduled: sessions.filter(s => s.status === 'agendada').length,
+      averageDuration: Math.round(
+        sessions.filter(s => s.duration).reduce((acc, s) => acc + (s.duration || 0), 0) / 
+        sessions.filter(s => s.duration).length || 0
+      )
+    };
+  },
+
+  /**
+   * Formats duration in seconds to human readable string
+   */
+  formatDuration(seconds: number): string {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    
+    if (h > 0) {
+      return `${h}h ${m}m ${s}s`;
+    }
+    if (m > 0) {
+      return `${m}m ${s}s`;
+    }
+    return `${s}s`;
+  },
+
+  /**
+   * Gets next scheduled session
+   */
+  async getNextScheduledSession(userBi: string): Promise<VideoSessionExtended | null> {
+    const sessions = await this.listSessions();
+    const now = new Date();
+    
+    return sessions.find(s => {
+      const isRelevant = s.guestBi === userBi || s.hostBi === userBi;
+      const isScheduled = s.status === 'agendada' || s.status === 'disponivel';
+      
+      if (!isRelevant || !isScheduled) return false;
+      
+      const scheduledDate = this.parseScheduledDate(s.scheduledFor);
+      return scheduledDate && scheduledDate.getTime() > now.getTime();
+    }) || null;
+  },
+
+  /**
+   * Parses various date/time formats
+   */
+  parseScheduledDate(scheduledFor: string): Date | null {
+    const date = new Date();
+    
+    if (scheduledFor.includes('Hoje')) {
+      const timeMatch = scheduledFor.match(/(\d{1,2}):(\d{2})/);
+      if (timeMatch) {
+        date.setHours(parseInt(timeMatch[1]), parseInt(timeMatch[2]), 0, 0);
+        return date;
+      }
+    }
+    
+    if (scheduledFor.includes('Amanhã')) {
+      date.setDate(date.getDate() + 1);
+      const timeMatch = scheduledFor.match(/(\d{1,2}):(\d{2})/);
+      if (timeMatch) {
+        date.setHours(parseInt(timeMatch[1]), parseInt(timeMatch[2]), 0, 0);
+        return date;
+      }
+    }
+    
+    const direct = new Date(scheduledFor);
+    if (!isNaN(direct.getTime())) {
+      return direct;
+    }
+    
+    return null;
+  },
+
+  /**
+   * Cleans up old completed sessions (older than 30 days)
+   */
+  async cleanupOldSessions(): Promise<number> {
+    const sessions = getLocalSessions();
+    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    
+    const filtered = sessions.filter(s => {
+      if (s.status !== 'concluida' && s.status !== 'cancelada') return true;
+      const createdAt = new Date(s.createdAt).getTime();
+      return createdAt > thirtyDaysAgo;
+    });
+    
+    const removedCount = sessions.length - filtered.length;
+    saveLocalSessions(filtered);
+    
+    return removedCount;
   }
 };
+
+export default VideoSessionService;

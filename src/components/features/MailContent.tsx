@@ -48,7 +48,8 @@ import { Message, SENSITIVITY_LEVELS, PRIORITY_CONFIGS, LanguageCode } from '../
 import { getCategoryMetadata } from '../../utils/protocolGenerator';
 import { translateText } from '../../utils/translator';
 import { useLanguage } from '../../hooks/useLanguage';
-import { VideoSessionPanel } from './VideoSessionPanel';
+import { Video } from 'lucide-react';
+
 
 const getOrgBadgeStyles = (org: string) => {
   const o = org.toUpperCase();
@@ -110,6 +111,8 @@ interface MailContentProps {
   onDeleteMessage?: (id: number) => void;
   onRestoreMessage?: (id: number) => void;
   deletedMessageIds?: number[];
+  onNavigateToVideoAtendimento?: () => void;
+  videoSessionCount?: number;
   currentLanguage?: LanguageCode;
 }
 
@@ -134,10 +137,11 @@ export function MailContent({
   onDeleteMessage,
   onRestoreMessage,
   deletedMessageIds = [],
+  onNavigateToVideoAtendimento,
+  videoSessionCount = 0,
   currentLanguage: propLanguage = 'pt'
 }: MailContentProps) {
   const { currentLanguage, t } = useLanguage();
-  const [showVideoPage, setShowVideoPage] = useState(false);
   const [editorBold, setEditorBold] = useState(false);
   const [editorItalic, setEditorItalic] = useState(false);
   const [editorUnderline, setEditorUnderline] = useState(false);
@@ -778,31 +782,6 @@ export function MailContent({
     );
   }
 
-  if (showVideoPage) {
-    return (
-      <section className="space-y-6 animate-fadeIn">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setShowVideoPage(false)}
-              className="w-10 h-10 md:w-12 md:h-12 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl flex items-center justify-center transition-all active:scale-95 border border-slate-200"
-              title="Voltar ao Correio"
-            >
-              <ArrowLeft size={18} className="md:w-5 md:h-5" />
-            </button>
-            <div>
-              <h3 className="text-lg md:text-2xl font-black text-primary leading-tight">Video Atendimento</h3>
-              <p className="text-[10px] md:text-sm text-slate-600 font-black uppercase tracking-widest">Canais de Conferência Governamental por Vídeo</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white border border-slate-300 rounded-[32px] p-6 md:p-8 shadow-sm">
-          <VideoSessionPanel />
-        </div>
-      </section>
-    );
-  }
 
   return (
     <section className="space-y-6">
@@ -827,11 +806,16 @@ export function MailContent({
 
       <div className="flex flex-wrap items-center gap-4 px-1 text-[10px] font-black uppercase tracking-widest">
         <button 
-          onClick={() => setShowVideoPage(true)} 
-          className="bg-indigo-50 hover:bg-indigo-150 text-indigo-755 border border-indigo-205 rounded-xl px-3.5 py-1.5 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer text-[10px] font-black uppercase tracking-widest"
+          onClick={onNavigateToVideoAtendimento}
+          className="text-indigo-600 hover:text-indigo-800 font-black uppercase tracking-widest text-[10px] transition-colors flex items-center gap-1.5 cursor-pointer bg-transparent border-0"
         >
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-          Video Atendimento
+          <Video size={14} className="shrink-0" />
+          VideoAtendimento
+          {videoSessionCount > 0 && (
+            <span className="bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full animate-pulse ml-1">
+              {videoSessionCount}
+            </span>
+          )}
         </button>
         {isInst && <button onClick={() => setTab('inst-qrcode')} className="cda-link-text">{translateText("Validação QR", currentLanguage)}</button>}
       </div>
@@ -924,13 +908,13 @@ export function MailContent({
             <table className="mobile-data-table w-full text-left border-collapse min-w-[900px]">
               <thead className="sticky top-0 z-10 bg-primary">
                 <tr className="bg-primary text-white text-[10px] font-black uppercase tracking-widest">
-                  <th className="py-4 px-5 rounded-l-2xl">{isInst ? 'CIDADÃO / REQUERENTE' : 'ÓRGÃO EMISSOR'}</th>
-                  <th className="py-4 px-5">ASSUNTO TEMA</th>
-                  <th className="py-4 px-5">CONTEÚDO / DETALHE</th>
-                  <th className="py-4 px-5">DATA DE EXPIRAÇÃO</th>
-                  <th className="py-4 px-5 text-center">HORA / DATA</th>
-                  <th className="py-4 px-5 text-center">PRIORIDADE</th>
-                  <th className="py-4 px-5 text-center rounded-r-2xl">AÇÕES</th>
+                  <th className="py-4 px-5 rounded-l-2xl">{isInst ? t("Cidadão / Requerente") : t("Órgão Emissor")}</th>
+                  <th className="py-4 px-5">{t("Assunto / Tema")}</th>
+                  <th className="py-4 px-5">{t("Conteúdo / Detalhe")}</th>
+                  <th className="py-4 px-5">{t("Data de Expiração")}</th>
+                  <th className="py-4 px-5 text-center">{t("Hora / Data")}</th>
+                  <th className="py-4 px-5 text-center">{t("Prioridade")}</th>
+                  <th className="py-4 px-5 text-center rounded-r-2xl">{t("Ações")}</th>
                 </tr>
               </thead>
               <tbody className="bg-white">
@@ -957,7 +941,7 @@ export function MailContent({
                               <span className="w-1.5 h-1.5 rounded-full bg-[#f87171] inline-block animate-pulse shrink-0" />
                             )}
                           </div>
-                          <div className="font-black italic text-slate-900 text-[11px] md:text-sm uppercase tracking-tight leading-none">
+                          <div className="font-black italic text-slate-900 text-[11px] md:text-sm tracking-tight leading-none">
                             {t(isInst 
                               ? item.org
                                   .replace(/^Cidadão:\s*Cidadão:\s*/i, '')
@@ -966,10 +950,10 @@ export function MailContent({
                                   .replace(/^Cidadão:\s*CIDADÃO:\s*/i, '')
                                   .replace(/^Cidadão:\s*/i, '')
                                   .replace(/^CIDADÃO:\s*/i, '')
-                              : (item.org.startsWith('SOC - ') 
-                                  ? item.org.replace('SOC - ', '') 
-                                  : `ÓRGÃO: ${item.org}`
-                                )
+: (item.org.startsWith('SOC - ') 
+                                   ? item.org.replace('SOC - ', '') 
+                                   : item.org
+                                 )
                             )}
                           </div>
                         </div>
@@ -981,8 +965,8 @@ export function MailContent({
                           <div className="font-extrabold text-[#1e293b] text-xs md:text-sm tracking-tight">
                             {t(item.details?.subject || item.preview.substring(0, 30))}
                           </div>
-                          <div className="text-[9px] text-[#94a3b8] font-black uppercase tracking-widest leading-none">
-                            {isInst ? 'REQUERIMENTO FISCAL' : (item.protocol?.category || 'NOTIFICAÇÃO DIGITAL')}
+                          <div className="text-[9px] text-[#94a3b8] font-black tracking-widest leading-none">
+                            {isInst ? t('Requerimento Fiscal') : t(item.protocol?.category || 'Notificação Digital')}
                           </div>
                         </div>
                       </td>

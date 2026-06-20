@@ -797,10 +797,70 @@ export const MOCK_INSTITUTIONAL_INBOX: Message[] = [
 ];
 
 export const MOCK_SENT_MESSAGES: Message[] = [
-  { id: 101, org: "SME", preview: "Resposta enviada: Solicito reagendamento para sexta-feira.", date: "Hoje", status: "Informativo" },
-  { id: 102, org: "AGT", preview: "Comprovativo fiscal enviado em anexo para validação.", date: "Ontem", status: "Informativo" },
-  { id: 103, org: "Hospital", preview: "Pedido de segunda via de relatório clínico submetido.", date: "Seg", status: "Informativo" },
-  { id: 104, org: "ENDE", preview: "Reclamação de cobrança indevida registada sob protocolo #9901.", date: "Ter", status: "Informativo" }
+  {
+    id: 101,
+    org: "SME",
+    preview: "Resposta enviada: Solicito reagendamento para sexta-feira.",
+    date: "Hoje",
+    status: "Informativo",
+    details: {
+      subject: "Solicitação de Reagendamento de Atendimento",
+      body: "Exmos. Senhores do Serviço de Migração e Estrangeiros,\n\nNa sequência do agendamento inicial que havia realizado para esta quarta-feira, venho por este meio solicitar respeitosamente o reagendamento para a próxima sexta-feira no período da manhã.\n\nInformo que o motivo desta alteração prende-se com um compromisso profissional inadiável que surgiu de forma imprevista e que me impossibilita de comparecer no horário inicialmente acordado.\n\nComprometo-me a apresentar-me no posto de atendimento na nova data às 09h00 munido de toda a documentação necessária para o efeito.\n\nAgradeço a compreensão e aguardo confirmação do novo horário.\n\nCom os melhores cumprimentos,\nEdlasio Galhardo\nBI: 009874562LA041\nTelefone: +244 923 000 111",
+      deadline: "Sem prazo",
+      state: "Enviada & Registada",
+      actions: ["Ver mensagem", "Cancelar envio"]
+    },
+    sensitivity: "Público",
+    priorityScale: "Normal"
+  },
+  {
+    id: 102,
+    org: "AGT",
+    preview: "Comprovativo fiscal enviado em anexo para validação.",
+    date: "Ontem",
+    status: "Informativo",
+    details: {
+      subject: "Envio de Comprovativo Fiscal para Validação",
+      body: "Exmos. Senhores da Administração Geral Tributária,\n\nVenho por este meio submeter o comprovativo de pagamento referente à minha obrigação fiscal do último período declaratório.\n\nO documento em anexo comprova a liquidação integral do valor de 18.500 Kz relativo ao Imposto Único Predial (IPU) do exercício em curso. O pagamento foi efetuado através de referência bancária gerada no sistema da AGT.\n\nSolicito a gentileza de proceder à validação e baixa do respetivo recibo no sistema de conformidade fiscal, de modo a que o meu certificado de situação perante o fisco seja atualizado.\n\nFico ao dispor para qualquer esclarecimento adicional que se faça necessário.\n\nAtenciosamente,\nEdlasio Galhardo\nNIF: 5401329188\nBI: 009874562LA041\n\n[ANEXO] Comprovativo_AGT_IPU_2026.pdf",
+      deadline: "Sem prazo",
+      state: "Enviada & Pendente Validação",
+      actions: ["Ver mensagem", "Baixar anexo", "Confirmar envio"]
+    },
+    sensitivity: "Sensível",
+    priorityScale: "Normal"
+  },
+  {
+    id: 103,
+    org: "Hospital",
+    preview: "Pedido de segunda via de relatório clínico submetido.",
+    date: "Seg",
+    status: "Informativo",
+    details: {
+      subject: "Solicitação de Segunda Via de Relatório Clínico",
+      body: "Exmos. Senhores do Serviço Clínico,\n\nVenho por este meio solicitar a emissão de uma segunda via do relatório clínico correspondente ao meu último ato médico realizado nessa instituição de saúde.\n\nO relatório original foi emitido no passado mês de Abril e é necessário para fins de seguro de saúde e reembolso de despesas médicas junto da minha seguradora.\n\nSolicito que o documento seja emitido com todas as informações clínicas constantes no relatório original, incluindo diagnóstico, medicação prescrita e orientações médicas subsequentes.\n\nCaso necessitem de algum dado adicional para processar este pedido, por favor entrem em contacto através do meu número de telefone registado no sistema.\n\nAgradeço a atenção e aguardo o processamento do pedido.\n\nCom respeito,\nEdlasio Galhardo\nBI: 009874562LA041\nTelefone: +244 923 000 111",
+      deadline: "15 de Junho de 2026",
+      state: "Em Processamento",
+      actions: ["Ver mensagem", "Submeter documento", "Contactar clínica"]
+    },
+    sensitivity: "Sensível",
+    priorityScale: "Normal"
+  },
+  {
+    id: 104,
+    org: "ENDE",
+    preview: "Reclamação de cobrança indevida registada sob protocolo #9901.",
+    date: "Ter",
+    status: "Informativo",
+    details: {
+      subject: "Reclamação de Cobrança Indevida de Energia Elétrica",
+      body: "Exmos. Senhores da Empresa Nacional de Distribuição de Electricidade (ENDE),\n\nVenho por este meio apresentar uma reclamação formal relativa a uma cobrança indevida na minha fatura de energia elétrica do corrente mês.\n\nNo resumo da minha conta foi включена uma taxa adicional de 3.500 Kz referente a um \"acerto de consumo\" que não corresponde a qualquer consumo efetuado no meu endereço. O consumo normal da minha residência varia entre 8.000 e 12.000 Kz mensais, e a fatura atual apresenta um valor total desproporcional ao histórico de consumo.\n\nReclamo que esta cobrança seja investigada e que me seja fornecido um relatório detalhado do consumo faturado, incluindo as leituras do contador correspondentes ao período em causa.\n\nSolicito igualmente a retificação imediata da fatura e o cancelamento da cobrança indevida enquanto a questão não for clarificada.\n\nEste pedido está registado sob o protocolo oficial #9901 do Correio Digital de Angola e aguardo um pronunciamento no prazo legal de 30 dias.\n\nCom os melhores cumprimentos,\nEdlasio Galhardo\nBI: 009874562LA041\nContrato: 9910245021\nTelefone: +244 923 000 111",
+      deadline: "30 de Junho de 2026",
+      state: "Em Análise",
+      actions: ["Ver mensagem", "Anexar prova", "Acompanhar estado"]
+    },
+    sensitivity: "Público",
+    priorityScale: "Importante"
+  }
 ];
 
 export const MOCK_GOV_CORRESPONDENCES: Correspondence[] = [

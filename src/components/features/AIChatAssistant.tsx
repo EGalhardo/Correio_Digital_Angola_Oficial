@@ -5,7 +5,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, X, Bot, User, Loader2, Mic, Shield, ArrowRight } from 'lucide-react';
+import { Send, X, Bot, User, Loader2, Mic, Shield, ArrowRight, Check, XCircle, Navigation } from 'lucide-react';
 import { AppMode, LanguageCode } from '../../types';
 import { USER_PROFILE_PHOTO } from '../../constants/data';
 
@@ -73,7 +73,7 @@ const SUGGESTED_ACTIONS: Record<string, Array<{label: string, type: string, prio
   pt: [
     { label: 'Solicitar NIF (AGT)', type: 'NIF', priority: 'Média', ack: 'Entendido! Já enviei o seu pedido de NIF para a fila de processamento da AGT. Você será notificado assim que o documento for emitido.' },
     { label: 'Solicitar IPU (AGT)', type: 'IPU', priority: 'Alta', ack: 'Entendido! Já enviei o seu pedido de IPU para a fila de processamento da AGT. Você será notificado assim que o documento for emitido.' },
-    { label: 'Certidão de Endereço', type: 'Certidão', priority: 'Baixa', ack: 'Entendido! Já registei o seu pedido de Certidão de Endereço. Brevemente estará disponível para consulta na sua Carteira Digital.' },
+    { label: 'Certidão de Endereço', type: 'Certidão', priority: 'Baixa', ack: 'Entendido! Já registei o seu pedido de Certidão de Endereço. Brevemente estará disponível para consulta na sua QR Code.' },
   ],
   um: [
     { label: 'Ondaka yo NIF (AGT)', type: 'NIF', priority: 'Média', ack: 'Ndacetila! Nda tuma ale ocipango cove co NIF ko AGT ndeti. Olandu woke yove amala vakuavisa.' },
@@ -116,6 +116,20 @@ const SUGGESTED_ACTIONS: Record<string, Array<{label: string, type: string, prio
     { label: 'Mukanda wa kunda', type: 'Certidão', priority: 'Baixa', ack: 'Mamboti! Okanda kofuka katula kala mu carteira yetu.' },
   ]
 };
+
+// Confirmação de navegação
+const NAV_CONFIRM_MESSAGES = {
+  pt: {
+    ask: "Entendi! Você quer ir para a página de {page}. Deseja confirmar esta navegação?",
+    confirmed: "Perfeito! Estou a levá-lo para a página de {page}. Em que mais posso ajudar?",
+    cancelled: "Entendido. Cancelei a navegação. Posso ajudar com outra coisa?"
+  }
+};
+
+interface PendingNavigation {
+  targetTab: string;
+  tabLabel: string;
+}
 
 interface Message {
   role: 'user' | 'assistant';
@@ -160,6 +174,9 @@ export function AIChatAssistant({
   const [messages, setMessages] = useState<Message[]>(() => {
     return [{ role: 'assistant', content: getGreetingText(currentLanguage) }];
   });
+
+  // Estado para navegação pendente de confirmação
+  const [pendingNavigation, setPendingNavigation] = useState<PendingNavigation | null>(null);
 
   useEffect(() => {
     const currentGreeting = getGreetingText(currentLanguage);
@@ -247,6 +264,39 @@ export function AIChatAssistant({
     };
 
     window.speechSynthesis.speak(utterance);
+  };
+
+  // Confirmar navegação
+  const confirmNavigation = () => {
+    if (!pendingNavigation || !onNavigate) return;
+    
+    const { targetTab, tabLabel } = pendingNavigation;
+    const confirmMsg = NAV_CONFIRM_MESSAGES.pt.confirmed.replace('{page}', tabLabel);
+    
+    onNavigate(targetTab);
+    setMessages(prev => [...prev, 
+      { role: 'assistant', content: confirmMsg }
+    ]);
+    setPendingNavigation(null);
+    
+    if (iaLiveActive) {
+      speak(confirmMsg);
+    }
+  };
+
+  // Cancelar navegação
+  const cancelNavigation = () => {
+    if (!pendingNavigation) return;
+    
+    const cancelMsg = NAV_CONFIRM_MESSAGES.pt.cancelled;
+    setMessages(prev => [...prev, 
+      { role: 'assistant', content: cancelMsg }
+    ]);
+    setPendingNavigation(null);
+    
+    if (iaLiveActive) {
+      speak(cancelMsg);
+    }
   };
 
   // Initialize and Control Speech Recognition
@@ -356,6 +406,44 @@ export function AIChatAssistant({
 
     const userMsg: Message = { role: 'user', content: currentInput };
     
+    // Verificar se há navegação pendente para processar
+    if (pendingNavigation) {
+      const normalizedText = currentInput.toLowerCase().trim();
+      
+      // Comandos de confirmação
+      const confirmCommands = [
+        'sim', 'confirmar', 'confirma', 'confirmo', 'ok', 'confirmado', 
+        'yes', 'confirm', 'aproved', 'yeap', 'yap'
+      ];
+      
+      // Comandos de cancelamento
+      const cancelCommands = [
+        'não', 'nao', 'cancelar', 'cancela', 'nao quero', 'não quero',
+        'desistir', 'voltar', 'cancelado', 'negado', 'recusar', 'rejeitar'
+      ];
+      
+      const isConfirm = confirmCommands.some(cmd => normalizedText.includes(cmd));
+      const isCancel = cancelCommands.some(cmd => normalizedText.includes(cmd));
+      
+      if (isConfirm) {
+        confirmNavigation();
+        if (!textOverride) setInput('');
+        return;
+      } else if (isCancel) {
+        setMessages(prev => [...prev, userMsg]);
+        cancelNavigation();
+        if (!textOverride) setInput('');
+        return;
+      } else {
+        setMessages(prev => [...prev, userMsg, { 
+          role: 'assistant', 
+          content: `Não entendi a sua resposta. Por favor, responda com "Sim" para confirmar ou "Não" para cancelar a navegação para "${pendingNavigation.tabLabel}".` 
+        }]);
+        if (!textOverride) setInput('');
+        return;
+      }
+    }
+    
     // Command interception (Voice navigation commands)
     const normalizedText = currentInput.toLowerCase().trim();
     let targetTab: string | null = null;
@@ -381,7 +469,7 @@ export function AIChatAssistant({
         tabLabel = "Documentos e Tramitação";
       } else if (normalizedText.includes("carteira") || normalizedText.includes("wallet") || normalizedText.includes("bi") || normalizedText.includes("passaporte") || normalizedText.includes("offline")) {
         targetTab = "carteira";
-        tabLabel = "Carteira Digital Segura";
+        tabLabel = "QR Code Segura";
       } else if (normalizedText.includes("perfil") || normalizedText.includes("dados") || normalizedText.includes("biometria") || normalizedText.includes("minha conta")) {
         targetTab = "perfil";
         tabLabel = "Meu Perfil de Cidadão";
@@ -392,12 +480,15 @@ export function AIChatAssistant({
     }
 
     if (targetTab && onNavigate) {
-      onNavigate(targetTab);
-      const navSuccessMessage = `Certamente! Já mudei o ecrã para si. Estamos agora na página de ${tabLabel} do Correio Digital de Angola. Em que mais posso ajudar?`;
-      setMessages(prev => [...prev, userMsg, { role: 'assistant', content: navSuccessMessage }]);
+      setPendingNavigation({ targetTab, tabLabel });
+      
+      const askMsg = NAV_CONFIRM_MESSAGES.pt.ask.replace('{page}', tabLabel);
+      setMessages(prev => [...prev, userMsg, { role: 'assistant', content: askMsg }]);
+      
       if (!textOverride) setInput('');
+      
       if (iaLiveActive) {
-        speak(navSuccessMessage);
+        speak(askMsg);
       }
       return;
     }
@@ -531,6 +622,60 @@ export function AIChatAssistant({
               </div>
             )}
 
+
+
+            {/* Botões de Confirmação de Navegação */}
+            {pendingNavigation && !isLoading && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col gap-2 pt-2"
+              >
+                <div className={`p-3 rounded-xl border ${
+                  isAdmin ? 'bg-slate-900/5 border-slate-300' : isInst ? 'bg-red-50 border-red-200' : 'bg-primary/5 border-primary/20'
+                }`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Navigation size={14} className={isAdmin ? 'text-slate-700' : isInst ? 'text-red-600' : 'text-primary'} />
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${
+                      isAdmin ? 'text-slate-700' : isInst ? 'text-red-600' : 'text-primary'
+                    }`}>
+                      Navegação Proposta
+                    </span>
+                  </div>
+                  <p className="text-xs font-medium text-slate-600">
+                    Pretende ir para <strong className={isAdmin ? 'text-slate-900' : isInst ? 'text-red-700' : 'text-primary'}>{pendingNavigation.tabLabel}</strong>?
+                  </p>
+                </div>
+                
+                <div className="flex gap-2">
+                  <button 
+                    onClick={confirmNavigation}
+                    className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                      isAdmin 
+                        ? 'bg-slate-900 text-white hover:bg-slate-800' 
+                        : isInst 
+                          ? 'bg-red-600 text-white hover:bg-red-700' 
+                          : 'bg-primary text-white hover:bg-primary/90'
+                    }`}
+                  >
+                    <Check size={14} />
+                    Confirmar
+                  </button>
+                  <button 
+                    onClick={cancelNavigation}
+                    className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                  >
+                    <XCircle size={14} />
+                    Cancelar
+                  </button>
+                </div>
+                
+                <p className="text-[9px] text-slate-400 text-center font-medium">
+                  Ou diga "Sim" para confirmar ou "Não" para cancelar
+                </p>
+              </motion.div>
+            )}
+
             {!isGov && messages.length === 1 && (
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
@@ -598,7 +743,7 @@ export function AIChatAssistant({
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                placeholder="Escreva sua mensagem..."
+                placeholder={pendingNavigation ? "Responda Sim ou Não..." : "Escreva sua mensagem..."}
                 className={`flex-1 bg-slate-50 border rounded-xl px-4 py-2.5 outline-none transition-colors text-sm font-medium ${
                   isAdmin ? 'border-slate-800 focus:border-slate-950' : isInst ? 'border-red-100 focus:border-red-600' : 'border-line focus:border-primary'
                 }`}

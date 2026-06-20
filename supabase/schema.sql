@@ -214,3 +214,82 @@ CREATE POLICY "Permitir tudo para document_requests" ON document_requests FOR AL
 DROP POLICY IF EXISTS "Permitir tudo para audit_logs" ON audit_logs;
 CREATE POLICY "Permitir tudo para audit_logs" ON audit_logs FOR ALL USING (true) WITH CHECK (true);
 
+
+-- Video Sessions for Video Attendance
+CREATE TABLE IF NOT EXISTS video_sessions (
+  id TEXT PRIMARY KEY,
+  room_name TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  associated_protocol TEXT,
+  associated_message_id INTEGER,
+  status TEXT NOT NULL DEFAULT 'agendada',
+  host_bi TEXT NOT NULL,
+  host_name TEXT NOT NULL,
+  guest_bi TEXT NOT NULL,
+  guest_name TEXT NOT NULL,
+  scheduled_for TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  closed_at TIMESTAMPTZ,
+  agenda TEXT,
+  notes TEXT,
+  duration INTEGER,
+  quality TEXT DEFAULT 'excellent',
+  participant_count INTEGER DEFAULT 2
+);
+
+-- Video Session Events for Audit Trail
+CREATE TABLE IF NOT EXISTS video_session_events (
+  id TEXT PRIMARY KEY,
+  session_id TEXT NOT NULL REFERENCES video_sessions(id) ON DELETE CASCADE,
+  event_type TEXT NOT NULL,
+  bi TEXT NOT NULL,
+  user_name TEXT NOT NULL,
+  description TEXT,
+  timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Video Session Notifications
+CREATE TABLE IF NOT EXISTS video_session_notifications (
+  id TEXT PRIMARY KEY,
+  session_id TEXT NOT NULL REFERENCES video_sessions(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,
+  message TEXT NOT NULL,
+  timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  read BOOLEAN DEFAULT FALSE
+);
+
+-- Enable Row Level Security for video_sessions
+ALTER TABLE video_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE video_session_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE video_session_notifications ENABLE ROW LEVEL SECURITY;
+
+-- Allow authenticated users to read and write their own sessions
+CREATE POLICY "Users can view own video sessions" ON video_sessions
+  FOR SELECT USING (guest_bi = auth.uid() OR host_bi = auth.uid());
+
+CREATE POLICY "Users can create video sessions" ON video_sessions
+  FOR INSERT WITH CHECK (guest_bi = auth.uid() OR host_bi = auth.uid());
+
+CREATE POLICY "Users can update own video sessions" ON video_sessions
+  FOR UPDATE USING (guest_bi = auth.uid() OR host_bi = auth.uid());
+
+-- Allow authenticated users to manage events for their sessions
+CREATE POLICY "Users can view own session events" ON video_session_events
+  FOR SELECT USING (
+    session_id IN (SELECT id FROM video_sessions WHERE guest_bi = auth.uid() OR host_bi = auth.uid())
+  );
+
+CREATE POLICY "Users can create own session events" ON video_session_events
+  FOR INSERT WITH CHECK (
+    session_id IN (SELECT id FROM video_sessions WHERE guest_bi = auth.uid() OR host_bi = auth.uid())
+  );
+
+-- Add protocol_number column to messages table if it doesn't exist
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS protocol_number VARCHAR(100);
+
+-- Update existing rows with generated protocol numbers
+UPDATE messages SET protocol_number = 'CDA-' || EXTRACT(YEAR FROM created_at) || '-' || LPAD(id::TEXT, 5, '0') WHERE protocol_number IS NULL;
+
+-- Create index for protocol_number
+CREATE INDEX IF NOT EXISTS idx_messages_protocol ON messages(protocol_number);
+

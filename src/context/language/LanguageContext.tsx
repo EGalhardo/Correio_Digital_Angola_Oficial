@@ -5,7 +5,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { LanguageCode } from '../../types';
-import { translateText } from '../../utils/translator';
+import { translateText, updateDynamicCache } from '../../services/translationService';
 import { 
   MOCK_CORRESPONDENCES, 
   MOCK_INSTITUTIONAL_INBOX, 
@@ -48,6 +48,7 @@ function extractTranslatableStrings(): string[] {
     if (m.details) {
       if (m.details.subject) strings.add(m.details.subject);
       if (m.details.body) strings.add(m.details.body);
+      if (m.details.state) strings.add(m.details.state);
     }
   });
 
@@ -72,17 +73,132 @@ function extractTranslatableStrings(): string[] {
     if (c.status) strings.add(c.status);
   });
 
-  // 6. Common interface labels
+  // 6. Common interface labels - expanded list
   const extraUI = [
-    "Não Lidas", "Lidas", "Enviadas", "Submeter", "Pesquisar", "Solicitar", "Sair",
-    "A carregar plataforma oficial...", "O seu novo endereço digital oficial",
+    // Navigation & Tabs
+    "Painel", "Correio", "Contactos", "Conta", "Trabalhadores", "QR Code", "IA",
+    "Instituições", "Correspondências", "Cidadãos", "Relatórios", "Auditoria",
+    "ÁREA DO CIDADÃO", "ADMINISTRAÇÃO CENTRAL", "INSTITUIÇÃO / PRIVADO",
+    
+    // Dashboard metrics
+    "Arquivos Processados", "Documentos Emitidos", "Alertas Ativos", "Nível de Segurança",
+    
+    // UI Labels
+    "Destaques & Novidades", "Correio Oficial", "QR Code", 
+    "Solicitar Documento", "Notificações",
+    "O que pretende consultar hoje?",
+    "Pesquisar correspondência oficial...",
+    "PESQUISA POR VOZ", "Ouvir Mensagem", "Histórico de Atividade",
+    "ID Digital", "Cidadão Verificado", "Agente AGT Verificado",
+    "Não Lidas", "Ver Histórico",
+    "Instituições Conectadas", "Governação Electrónica",
+    "Abrir Pasta Digital", "Novas Mensagens", "Documentos Ativos",
+    "Segurança CDA", "Ver Correspondências",
+    "Ocultar solicitações", "Ver solicitações",
+    "Documentos Digitais", "Facturas Recebidas",
+    "novos arquivados", "faturas aguardando pagamento",
+    "Submeter Documento", "mensagens por ler", "Nova Mensagem",
+    "Lidas", "Enviadas", "Arquivadas",
+    "Lida", "Não Lida", "Arquivada",
+    "Pendente", "Pago", "Vencido", "Em processamento",
+    
+    // Login
+    "A carregar plataforma oficial...",
+    "O seu novo endereço digital oficial",
     "Receba, assine e despache correspondência governamental com validade jurídica do Estado da República de Angola.",
-    "Infraestrutura Oficial Segura SME & AGT", "Cidadão", "Instituição", "Admin",
-    "Login Institucional", "Login Admin", "Login", "Acesso oficial do cidadão digital",
-    "Número de Agente", "Número de BI de Cidadão", "Senha de Acesso", "Entrar com BI e Senha",
-    "Lida", "Não Lida", "Arquivada", "Pendente", "Pago", "Vencido", "Em processamento",
-    "Login Facial", "Entrar no Portal", "Auto Preencher Demonstração",
-    "1. Pedido", "2. Anexos", "3. Análise", "4. Pagamento", "5. Despacho", "6. Emissão"
+    "Infraestrutura Oficial Segura SME & AGT",
+    "Cidadão", "Instituição", "Admin",
+    "Login", "Número de Agente", "Número de BI de Cidadão", "Senha de Acesso",
+    "Entrar com BI e Senha",
+    
+    // Document Content
+    "Pagamento Pendente IPU", "Levantamento de BI",
+    "Fatura de Energia", "Factura de Energia",
+    "Factura e Ajuste de Consumo", "Notificação Judicial",
+    "Resultado Clínico", "Auditoria Fiscal Geral",
+    "Requerimento Fiscal", "Notificação Digital",
+    
+    // Table Headers & Actions
+    "Cidadão / Requerente", "Órgão Emissor",
+    "Assunto / Tema", "Conteúdo / Detalhe",
+    "Data de Expiração", "Hora / Data",
+    "Prioridade", "Ações",
+    "Cidadão / Requerente", "Órgão Emissor",
+    "Tipo de Documento / Assunto", "Conteúdo / Detalhe",
+    "Prazo de Validade", "Emissão (Hora / Data)",
+    "Nível de Restrição", "Ações",
+    "Expira", "Requerimento de Certidão", "Prova de Vida Digital",
+    "Analisar Documento", "Abrir Documento",
+    
+    // Payment & Invoice
+    "Liquidar Fatura Agora", "PAGAR FATURA", "VER DOCUMENTO",
+    "IMPOSTO PREDIAL URBANO", "EMOLUMENTOS REGISTO",
+    "TAXA MODERADORA", "PRÉ-PAGO LUANDA",
+    "CONSUMO RESIDENCIAL DE ÁGUA",
+    "Liquidada", "Aguardando",
+    
+    // Empty states
+    "Sem Documentos Registados", "Sem Facturas Emitidas",
+    "Todas as Cobranças & Facturas Recebidas", "Cobranças & Facturas Recebidas",
+    "Repositório de Documentos", "Expediente de Entrada",
+    "Pasta Digital de Documentos Homologados",
+    "Gestão unificada de liquidações", "Gestão ativa de liquidações",
+    "Não possui faturas emitidas", "Nenhum documento localizado",
+    
+    // Invoice details
+    "Serviço de Pagamento Digital Integrado",
+    "Liquidando Fatura Oficial",
+    "Total a Liquidar", "Vencimento",
+    "Método de Liquidação",
+    "Telemóvel Multicaixa Express",
+    "Débito do Saldo Virtual CDA",
+    "Saldo Disponível",
+    "Coordenadas de Pagamento Multicaixa",
+    "Entidade", "Referência", "Montante",
+    "Copiar Referência", "Copiado",
+    "Confirmar & Liquidar Agora",
+    "Simular Autenticação Bancária",
+    "Cobrança Liquidada",
+    "Ver Recibo Integral", "Fechar Janela",
+    
+    // Receipt
+    "República de Angola", "Recibo Eletrónico Digital",
+    "Assinado com Sucesso CDA v4.1",
+    "Identificador Oficial", "Nº da Factura",
+    "Referência Utilizada", "NIF / Contribuinte Utente",
+    "Data Autenticação", "Montante Liquidado",
+    
+    // Form labels
+    "Destinatário do Documento", "Destinatário Institucional",
+    "Assunto / Título do Documento",
+    "Conteúdo principal / Teor do Documento",
+    "Submeter Documento Oficial", "Descartar",
+    
+    // Wallet
+    "Saldo QR Code",
+    
+    // Filter labels
+    "Criptografia e Assinatura Militar do Estado",
+    
+    // Slide titles and subtitles
+    "Seu BI é o seu endereço digital",
+    "Aceda a correspondências e documentos oficiais de forma segura e centralizada em qualquer lugar.",
+    "Segurança de Nível Estatal",
+    "Dados protegidos por criptografia de ponta a ponta e biometria para garantir a total privacidade do cidadão.",
+    "Configurar Segurança",
+    "Notificações em Tempo Real",
+    "Receba alertas instantâneos sobre multas, impostos e agendamentos governamentais.",
+    "Ver Alertas",
+    "Contactos de Emergência",
+    "Mantenha a sua rede de confiança atualizada para situações críticas.",
+    "Gerir Contactos",
+    "Assistência por IA Oficial",
+    "Tire dúvidas sobre processos burocráticos e receba orientações personalizadas.",
+    "Abrir Conversa",
+    "Angola Digital em Movimento",
+    "A modernização dos serviços públicos ao serviço de todos os angolanos.",
+    "Saber Mais",
+    "Ver Correspondências"
   ];
   extraUI.forEach(s => strings.add(s));
 
@@ -95,61 +211,61 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     return (saved as LanguageCode) || 'pt';
   });
 
-  const [dynamicCache, setDynamicCache] = useState<Record<string, Record<string, string>>>(() => {
-    try {
-      const saved = localStorage.getItem('cda_dynamic_translation_cache');
-      return saved ? JSON.parse(saved) : {};
-    } catch (e) {
-      return {};
-    }
-  });
-
   const [isTranslating, setIsTranslating] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('cda_current_language', currentLanguage);
   }, [currentLanguage]);
 
-  useEffect(() => {
-    localStorage.setItem('cda_dynamic_translation_cache', JSON.stringify(dynamicCache));
-  }, [dynamicCache]);
-
   // Translate dynamic data in the background when language changes
   useEffect(() => {
     if (currentLanguage === 'pt') return;
 
-    // Skip if we already have cache for this language
-    if (dynamicCache[currentLanguage] && Object.keys(dynamicCache[currentLanguage]).length > 0) {
-      return;
-    }
-
+    setIsTranslating(true);
+    
     const loadTranslations = async () => {
-      setIsTranslating(true);
       try {
         const textsToTranslate = extractTranslatableStrings();
-        const response = await fetch('/api/translate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ texts: textsToTranslate, targetLanguage: currentLanguage })
-        });
         
-        if (response.ok) {
-          const data = await response.json();
-          if (data && Array.isArray(data.translations)) {
-            const mapped: Record<string, string> = {};
-            textsToTranslate.forEach((originalText, index) => {
-              const translatedVal = data.translations[index];
-              if (translatedVal && translatedVal !== originalText) {
-                mapped[originalText.trim()] = translatedVal;
-              }
+        // Split into batches to avoid API timeout
+        const batchSize = 50;
+        const batches: string[][] = [];
+        
+        for (let i = 0; i < textsToTranslate.length; i += batchSize) {
+          batches.push(textsToTranslate.slice(i, i + batchSize));
+        }
+        
+        const allTranslations: Record<string, string> = {};
+        
+        for (const batch of batches) {
+          try {
+            const response = await fetch('/api/translate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ texts: batch, targetLanguage: currentLanguage })
             });
-
-            setDynamicCache(prev => ({
-              ...prev,
-              [currentLanguage]: mapped
-            }));
+            
+            if (response.ok) {
+              const data = await response.json();
+              if (data && Array.isArray(data.translations)) {
+                batch.forEach((originalText, index) => {
+                  const translatedVal = data.translations[index];
+                  if (translatedVal && translatedVal !== originalText) {
+                    allTranslations[originalText.trim()] = translatedVal;
+                  }
+                });
+              }
+            }
+          } catch (err) {
+            console.warn('Translation batch failed, continuing with next batch:', err);
           }
         }
+        
+        // Update the global translation service
+        if (Object.keys(allTranslations).length > 0) {
+          updateDynamicCache(currentLanguage, allTranslations);
+        }
+        
       } catch (err) {
         console.error("Failed to automatically translate app data:", err);
       } finally {
@@ -162,22 +278,9 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const t = (text: string): string => {
     if (!text) return text;
-
-    // Check if we have custom translation mapping (including PT corrections)
-    const translated = translateText(text, currentLanguage);
-    if (translated !== text) return translated;
-
-    if (currentLanguage === 'pt') return text;
-
-    const trimmed = text.trim();
     
-    // 1. Check if we have an AI translation cached for this specific string and language
-    const langCache = dynamicCache[currentLanguage];
-    if (langCache && langCache[trimmed]) {
-      return langCache[trimmed];
-    }
-
-    return text;
+    // Use the centralized translation service that handles both static and dynamic translations
+    return translateText(text, currentLanguage);
   };
 
   return (

@@ -53,6 +53,8 @@ import { Document, AppMode, UserRequest, VideoSession, VideoSessionEvent } from 
 import { GOV_HIGHLIGHT_SLIDES } from "../../constants/data";
 import { useInstitutions } from "../../services/institutionStore";
 import { VideoSessionService } from "../../services/videoSessionService";
+import { LazyImage } from "../ui/LazyImage";
+import { AnimatedCounter } from "../ui/AnimatedCounter";
 
 interface Institution {
   name: string;
@@ -401,7 +403,8 @@ export function GovDashboard({
       { id: "huila", name: "Huíla", top: "72%", left: "33%", count: 98234 },
       { id: "namibe", name: "Namibe", top: "74%", left: "18%", count: 62540 },
       { id: "cunene", name: "Cunene", top: "85%", left: "34%", count: 49750 },
-      { id: "cuando-cubango", name: "Cuando Cubango", top: "76%", left: "59%", count: 51240 },
+      { id: "cuando", name: "Cuando", top: "76%", left: "59%", count: 30744 },
+      { id: "cubango", name: "Cubango", top: "78%", left: "64%", count: 20496 },
     ],
     [],
   );
@@ -442,7 +445,8 @@ export function GovDashboard({
       { id: "namibe", name: "Namibe", count: 62540 },
       { id: "lunda-sul", name: "Lunda Sul", count: 58920 },
       { id: "cuanza-norte", name: "Cuanza Norte", count: 52130 },
-      { id: "cuando-cubango", name: "Cuando Cubango", count: 51240 },
+      { id: "cuando", name: "Cuando", count: 30744 },
+      { id: "cubango", name: "Cubango", count: 20496 },
       { id: "cunene", name: "Cunene", count: 49750 },
       { id: "zaire", name: "Zaire", count: 42150 },
       { id: "bengo", name: "Bengo", count: 35420 },
@@ -845,9 +849,13 @@ export function GovDashboard({
             {/* Cartão 1 */}
             <div className="bg-white border border-[#0c2340]/12 rounded-[20px] p-6 flex flex-col justify-between min-h-[145px] text-left hover:border-[#0c2340]/25 transition-all">
               <div className="space-y-1">
-                <div className="text-3xl font-black text-slate-955 italic tracking-tighter leading-none">
-                  1.248.752
-                </div>
+                <AnimatedCounter
+                  to={1248752}
+                  duration={2000}
+                  suffix=""
+                  className="text-3xl font-black text-slate-955 italic tracking-tighter leading-none font-mono"
+                  triggerOnVisible
+                />
                 <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">
                   Correspondências Enviadas
                 </div>
@@ -860,9 +868,13 @@ export function GovDashboard({
             {/* Cartão 2 */}
             <div className="bg-white border border-[#0c2340]/12 rounded-[20px] p-6 flex flex-col justify-between min-h-[145px] text-left hover:border-[#0c2340]/25 transition-all">
               <div className="space-y-1">
-                <div className="text-3xl font-black text-slate-955 italic tracking-tighter leading-none">
-                  932.540
-                </div>
+                <AnimatedCounter
+                  to={932540}
+                  duration={2200}
+                  suffix=""
+                  className="text-3xl font-black text-slate-955 italic tracking-tighter leading-none font-mono"
+                  triggerOnVisible
+                />
                 <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">
                   Correspondências Entregues
                 </div>
@@ -875,9 +887,13 @@ export function GovDashboard({
             {/* Cartão 3 */}
             <div className="bg-white border border-[#0c2340]/12 rounded-[20px] p-6 flex flex-col justify-between min-h-[145px] text-left hover:border-[#0c2340]/25 transition-all">
               <div className="space-y-1">
-                <div className="text-3xl font-black text-slate-955 italic tracking-tighter leading-none">
-                  316.212
-                </div>
+                <AnimatedCounter
+                  to={316212}
+                  duration={1800}
+                  suffix=""
+                  className="text-3xl font-black text-slate-955 italic tracking-tighter leading-none font-mono"
+                  triggerOnVisible
+                />
                 <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">
                   Pendentes
                 </div>
@@ -890,9 +906,14 @@ export function GovDashboard({
             {/* Cartão 4 */}
             <div className="bg-white border border-[#0c2340]/12 rounded-[20px] p-6 flex flex-col justify-between min-h-[145px] text-left hover:border-[#0c2340]/25 transition-all">
               <div className="space-y-1">
-                <div className="text-3xl font-black text-slate-955 italic tracking-tighter leading-none">
-                  92,4%
-                </div>
+                <AnimatedCounter
+                  to={92.4}
+                  duration={2000}
+                  decimals={1}
+                  suffix="%"
+                  className="text-3xl font-black text-slate-955 italic tracking-tighter leading-none font-mono"
+                  triggerOnVisible
+                />
                 <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">
                   Taxa de Sucesso
                 </div>
@@ -915,9 +936,13 @@ export function GovDashboard({
                   Instituições Ativadas
                 </div>
                 <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 leading-none mt-1 min-w-0">
-                  <span className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight italic shrink-0">
-                    {masterInstitutions.filter(i => i.status === 'Ativa').length}
-                  </span>
+                  <AnimatedCounter
+                    to={masterInstitutions.filter(i => i.status === 'Ativa').length}
+                    duration={1500}
+                    suffix=""
+                    className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight italic shrink-0 font-mono"
+                    triggerOnVisible
+                  />
                   <span className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-wider truncate max-w-full">
                     de {masterInstitutions.length} integradas
                   </span>
@@ -938,7 +963,13 @@ export function GovDashboard({
                   Cidadãos Registados
                 </div>
                 <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 leading-none mt-1 min-w-0">
-                  <span className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight italic shrink-0">2.3M</span>
+                  <AnimatedCounter
+                    to={2300000}
+                    duration={2000}
+                    suffix=""
+                    className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight italic shrink-0 font-mono"
+                    triggerOnVisible
+                  />
                   <span className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-wider truncate max-w-full">cidadãos</span>
                 </div>
                 <div className="text-[10px] md:text-[11px] font-bold uppercase tracking-wider text-emerald-600 pt-1">
@@ -957,7 +988,13 @@ export function GovDashboard({
                   Tempo Médio de Resposta
                 </div>
                 <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 leading-none mt-1">
-                  <span className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight italic shrink-0">2h 35m</span>
+                  <AnimatedCounter
+                    to={155}
+                    duration={1800}
+                    suffix=" min"
+                    className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight italic shrink-0 font-mono"
+                    triggerOnVisible
+                  />
                 </div>
                 <div className="text-[10px] md:text-[11px] font-bold uppercase tracking-wider text-[#10b981] pt-1">
                   ↓ -18% vs mês anterior
@@ -975,7 +1012,13 @@ export function GovDashboard({
                   Pendentes
                 </div>
                 <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 leading-none mt-1 min-w-0">
-                  <span className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight italic shrink-0">12.540</span>
+                  <AnimatedCounter
+                    to={12540}
+                    duration={1600}
+                    suffix=""
+                    className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight italic shrink-0 font-mono"
+                    triggerOnVisible
+                  />
                   <span className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-wider truncate max-w-full block">correspondências</span>
                 </div>
                 <div className="text-[10px] md:text-[11px] font-bold uppercase tracking-wider text-rose-600 pt-1">
@@ -1587,12 +1630,13 @@ export function GovDashboard({
 
                 <div className="flex flex-col gap-4 items-center">
                   {/* Visual Map Representation */}
-                  <div className="w-full h-[220px] bg-white border border-slate-200 rounded-2xl flex items-center justify-center relative overflow-hidden p-1">
-                    <img
+                  <div className="w-full h-[240px] bg-white border border-slate-200 rounded-2xl flex items-center justify-center relative overflow-hidden">
+                    <LazyImage
                       src="https://i.postimg.cc/rp2hhzfK/mapa-Angola.jpg"
                       alt="Mapa de Angola Províncias"
-                      className="w-full h-full object-contain rounded-xl"
-                      referrerPolicy="no-referrer"
+                      placeholder="skeleton"
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                      className="rounded-xl"
                     />
                   </div>
 
@@ -1615,7 +1659,8 @@ export function GovDashboard({
                       { name: "Lunda Sul", count: "25.180", color: "bg-sky-600" },
                       { name: "Cunene", count: "21.900", color: "bg-emerald-500" },
                       { name: "Cuanza Norte", count: "19.850", color: "bg-amber-500" },
-                      { name: "Cuando Cubango", count: "14.320", color: "bg-red-500" },
+                      { name: "Cuando", count: "8.600", color: "bg-red-500" },
+                      { name: "Cubango", count: "5.720", color: "bg-orange-500" },
                       { name: "Bengo", count: "11.200", color: "bg-slate-500" }
                     ].map((prov) => (
                       <div
@@ -1810,11 +1855,17 @@ export function GovDashboard({
 
                 {/* Styled enlarge centered Face mesh image container */}
                 <div className="w-28 h-28 flex items-center justify-center mb-4 shrink-0 relative overflow-hidden group rounded-2xl">
-                  <img
+                  <LazyImage
                     src="https://i.postimg.cc/x88pJx9X/Login-Biometrico.jpg"
                     alt="Login Biométrico"
-                    className="w-full h-full object-cover relative z-10 transition-transform duration-300 group-hover:scale-105"
-                    referrerPolicy="no-referrer"
+                    placeholder="skeleton"
+                    style={{ 
+                      width: '100%', 
+                      height: '100%', 
+                      objectFit: 'cover',
+                      borderRadius: '0.75rem',
+                    }}
+                    className="relative z-10 transition-transform duration-300 group-hover:scale-105"
                   />
                 </div>
 

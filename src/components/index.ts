@@ -39,4 +39,6 @@ export * from './features/InstQrCodeContent';
 export * from './features/InstAiAssistantContent';
 export * from './features/GovIaContent';
 export * from './features/NotificationDetailModal';
+export * from './features/VideoSessionPage';
+export * from './features/VideoSessionPanel';
 

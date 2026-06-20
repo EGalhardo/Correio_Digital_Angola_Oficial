@@ -29,11 +29,12 @@ import {
   Keyboard,
   ArrowLeft
 } from 'lucide-react';
-import QRCode from 'qrcode';
+// QRCode loaded dynamically
 import { Html5Qrcode } from 'html5-qrcode';
 import { Document, Message } from '../../types';
 
 interface InstQrCodeContentProps {
+  qrCodeModuleRef?: { current: any };
   documents: Document[];
   messages?: Message[];
   onSelectMessage?: (msg: Message) => void;
@@ -89,6 +90,16 @@ export function InstQrCodeContent({ documents, messages, onSelectMessage, addAud
 
   // Scanner - Camera State
   const [cameraRunning, setCameraRunning] = useState(false);
+  // QRCode Module - loaded dynamically
+  const [qrCode, setQrCode] = useState<any>(null);
+
+  useEffect(() => {
+    import('qrcode').then((mod) => {
+      setQrCode(mod.default || mod);
+    }).catch(err => {
+      console.error('Failed to load QRCode module:', err);
+    });
+  }, []);
   const qrReaderRef = useRef<Html5Qrcode | null>(null);
 
   // Scanner - File State
@@ -898,7 +909,7 @@ export function InstQrCodeContent({ documents, messages, onSelectMessage, addAud
     }
 
     try {
-      const url = await QRCode.toDataURL(payload, {
+      const url = await qrCode?.toDataURL(payload, {
         width: 240,
         margin: 2,
         errorCorrectionLevel: 'M'
@@ -936,7 +947,7 @@ export function InstQrCodeContent({ documents, messages, onSelectMessage, addAud
     const payload = JSON.stringify(payloadObj, null, 2);
 
     try {
-      const url = await QRCode.toDataURL(payload, {
+      const url = await qrCode?.toDataURL(payload, {
         width: formSize,
         margin: 2,
         errorCorrectionLevel: formEcl
@@ -956,7 +967,7 @@ export function InstQrCodeContent({ documents, messages, onSelectMessage, addAud
     }
 
     try {
-      const url = await QRCode.toDataURL(freeInputText, {
+      const url = await qrCode?.toDataURL(freeInputText, {
         width: freeSize,
         margin: 2,
         errorCorrectionLevel: freeEcl

@@ -702,7 +702,7 @@ export function PastaDigitalContent({
       </div>
 
       <div className="flex flex-wrap items-center gap-4 px-1 text-[10px] font-black uppercase tracking-widest">
-        <button onClick={() => setTab('carteira')} className="cda-link-text">{t("Voltar à Carteira")}</button>
+        <button onClick={() => setTab('qr-code')} className="cda-link-text">{t("Voltar à Carteira")}</button>
         <button onClick={() => setTab('historico')} className="cda-link-text">{t("Ver Histórico")}</button>
         <button onClick={() => setTab('notificacoes')} className="cda-link-text">{t("Notificações")}</button>
         <button onClick={() => setShowArchiveGuide(prev => !prev)} className="cda-link-text">
@@ -713,7 +713,7 @@ export function PastaDigitalContent({
       {showArchiveGuide && (
         <div className="bg-slate-50 border border-slate-200 rounded-[24px] p-4 text-left">
           <p className="text-[11px] text-slate-600 font-semibold leading-relaxed">
-            <strong className="text-slate-900">{t("Carteira Digital")}</strong> {t("apresenta os documentos ativos para uso rápido.")} <strong className="text-slate-900">{t("Pasta Digital")}</strong> {t("reúne os registos, anexos, certidões e comprovativos organizados para consulta, partilha e arquivo institucional.")}
+            <strong className="text-slate-900">{t("QR Code")}</strong> {t("apresenta os documentos ativos para uso rápido.")} <strong className="text-slate-900">{t("Pasta Digital")}</strong> {t("reúne os registos, anexos, certidões e comprovativos organizados para consulta, partilha e arquivo institucional.")}
           </p>
         </div>
       )}

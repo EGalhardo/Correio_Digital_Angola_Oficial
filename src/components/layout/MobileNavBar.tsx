@@ -4,12 +4,11 @@
  */
 
 import { motion } from 'motion/react';
-import { Home, Mail, QrCode, Users, User, BarChart3, Shield, Activity, Scan, Folder, Receipt, FileText, Landmark, Settings, Bot } from 'lucide-react';
+import { Home, Mail, QrCode, Users, User, BarChart3, Shield, FileText, Landmark, Settings, Bot } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 import { Message, Document, AppMode, LanguageCode } from '../../types';
 import { useSession } from '../../services/sessionStore';
-import { translateText } from '../../utils/translator';
-
+import { useLanguage } from '../../hooks/useLanguage';
 
 interface MenuItem {
   id: string;
@@ -26,6 +25,7 @@ interface MobileNavBarProps {
   currentLanguage?: LanguageCode;
 }
 
+// Menu citizen SEM QR Code
 const userItems: MenuItem[] = [
   { id: 'home', label: 'Painel', icon: Home },
   { id: 'correspondencias', label: 'Correio', icon: Mail },
@@ -55,16 +55,12 @@ const adminItems: MenuItem[] = [
 ];
 
 export function MobileNavBar({ 
-  tab, 
-  setTab, 
-  setSelectedMessage, 
-  setSelectedDoc,
-  appMode: _propsAppMode,
-  currentLanguage = 'pt'
+  tab, setTab, setSelectedMessage, setSelectedDoc,
+  appMode: _propsAppMode, currentLanguage = 'pt'
 }: MobileNavBarProps) {
   const { appMode } = useSession();
+  const { t: translate } = useLanguage();
 
-  
   const getItemsForMode = () => {
     switch (appMode) {
       case 'admin': return adminItems;
@@ -77,7 +73,7 @@ export function MobileNavBar({
   const isAdminOrInst = appMode === 'admin' || appMode === 'institution';
 
   return (
-    <nav className={`md:hidden fixed bottom-0 left-0 right-0 h-16 border-t flex items-center px-2 z-50 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)] transition-colors bg-white border-slate-100 ${
+    <nav className={`md:hidden fixed bottom-0 left-0 right-0 h-16 border-t flex items-center px-2 z-50 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)] transition-colors bg-white border-[#D1D5DB] ${
       isAdminOrInst ? 'overflow-x-auto justify-start gap-2 scrollbar-none snap-x snap-mandatory' : 'justify-around'
     }`}>
       {currentItems.map(({ id, label, icon: Icon }) => (
@@ -91,21 +87,16 @@ export function MobileNavBar({
           }}
           className={`flex flex-col items-center justify-center gap-0.5 transition-all px-2.5 h-full relative shrink-0 ${
             isAdminOrInst ? 'min-w-[72px] snap-start' : 'flex-1'
-          } ${
-            tab === id ? 'text-indigo-600' : 'text-slate-400'
-          }`}
+          } ${tab === id ? 'text-indigo-600' : 'text-slate-400'}`}
         >
           <div className={`transition-all duration-300 ${tab === id ? 'scale-110' : 'scale-100'}`}>
             <Icon size={19} strokeWidth={tab === id ? '2.5' : '2'} />
           </div>
           <span className={`text-[8px] font-black uppercase tracking-tight transition-all ${tab === id ? 'opacity-100' : 'opacity-60'}`}>
-            {translateText(label, currentLanguage)}
+            {translate(label)}
           </span>
           {tab === id && (
-            <motion.div 
-              layoutId="activeTab"
-              className={`absolute -top-px left-1/2 -translate-x-1/2 w-6 h-1 rounded-b-full bg-indigo-600`}
-            />
+            <motion.div layoutId="activeTab" className="absolute -top-px left-1/2 -translate-x-1/2 w-6 h-1 rounded-b-full bg-indigo-600" />
           )}
         </button>
       ))}

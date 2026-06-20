@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { LazyImage } from '../ui/LazyImage';
 import { 
   FileText, 
   UploadCloud, 
@@ -483,7 +484,7 @@ export function SolicitarDocumentoContent({
         <div className="flex flex-wrap items-center gap-4 px-1 text-[10px] font-black uppercase tracking-widest mb-4">
           <button onClick={() => setTab('home')} className="text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer flex items-center gap-1 font-extrabold">{t("Voltar ao Painel")}</button>
           <span className="text-slate-300">|</span>
-          <button onClick={() => setTab('carteira')} className="text-slate-400 hover:text-primary transition-colors cursor-pointer">{t("Carteira Digital")}</button>
+          <button onClick={() => setTab('qr-code')} className="text-slate-400 hover:text-primary transition-colors cursor-pointer">{t("Carteira Digital")}</button>
           <button onClick={() => setTab('historico')} className="text-slate-400 hover:text-primary transition-colors cursor-pointer">{t("Ver Histórico")}</button>
           <button onClick={() => setTab('notificacoes')} className="text-slate-400 hover:text-primary transition-colors cursor-pointer">{t("Notificações")}</button>
         </div>
@@ -1500,7 +1501,11 @@ export function SolicitarDocumentoContent({
                   <div className="flex justify-between items-start border-b border-white/10 pb-6">
                     <div className="text-left">
                        <div className="h-10 w-auto mb-2 opacity-50">
-                         <img src="https://i.postimg.cc/Rq5TKbdk/Correio-Digital-Angola.png" alt="Coat of arms" className="h-full object-contain invert" />
+                         <LazyImage 
+                           src="https://i.postimg.cc/Rq5TKbdk/Correio-Digital-Angola.png" 
+                           alt="Coat of arms" 
+                           style={{ height: '100%', width: 'auto', objectFit: 'contain', filter: 'invert(1)' }}
+                         />
                        </div>
                       <span className="text-[10px] font-black uppercase tracking-[0.25em] text-indigo-300 block">República de Angola</span>
                       <span className="text-[9px] font-bold uppercase text-slate-400 block mt-0.5">Ministério da Justiça e dos Direitos Humanos</span>

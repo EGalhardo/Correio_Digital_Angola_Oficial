@@ -8,7 +8,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Mic, Globe, ChevronDown, Check } from 'lucide-react';
 import { useSession } from '../../services/sessionStore';
 import { AppNotification, AppMode, LanguageCode, LANGUAGE_OPTIONS } from '../../types';
-import { translateText } from '../../utils/translator';
+import { useLanguage } from '../../hooks/useLanguage';
+import { LazyImage } from '../ui/LazyImage';
 import type { JSX } from 'react';
 
 interface HeaderProps {
@@ -136,6 +137,7 @@ export function Header({
   setCurrentLanguage
 }: HeaderProps) {
   const { user, activeProfile } = useSession();
+  const { t: translate } = useLanguage();
   const isGov = appMode !== 'user';
   const isAdmin = appMode === 'admin';
   const isInst = appMode === 'institution';
@@ -169,7 +171,7 @@ export function Header({
         case 'inst-qrcode': return 'Validação por QR Code';
         case 'inst-ai-assistant': return 'Assistência IA Institucional';
         case 'perfil': return 'Conta Institucional';
-        case 'carteira': return 'Documentos Institucionais';
+        case 'qr-code': return 'Documentos Institucionais';
         case 'historico': return 'Histórico Institucional';
         case 'notificacoes': return 'Notificações Institucionais';
         default: return 'Área Institucional';
@@ -180,7 +182,7 @@ export function Header({
       case 'home': return 'Área do Cidadão';
       case 'correspondencias': return 'Correio Digital';
       case 'documentos': return 'Documentos e Tramitações';
-      case 'carteira': return 'Carteira Digital';
+      case 'qr-code': return 'QR Code';
       case 'pasta-digital': return 'Pasta Digital';
       case 'historico': return 'Meu Histórico';
       case 'notificacoes': return 'Centro de Notificações';
@@ -231,10 +233,12 @@ export function Header({
         isInst ? 'border-red-200 text-slate-900' : 'text-slate-900 border-line/40'
       }`}>
         <div className="flex items-center" onClick={() => setTab(isAdmin ? 'gov-dashboard' : 'home')}>
-          <img 
+          <LazyImage 
             src="https://i.postimg.cc/Rq5TKbdk/Correio-Digital-Angola.png" 
             alt="Correio Digital" 
-            className={`h-[46px] w-auto object-contain cursor-pointer`}
+            priority={true}
+            placeholder="skeleton"
+            style={{ height: '46px', width: 'auto', objectFit: 'contain', cursor: 'pointer' }}
           />
           {isAdmin && (
             <span className={`ml-2 text-[8px] font-black uppercase px-1.5 py-0.5 rounded leading-none bg-slate-900 text-white`}>
@@ -292,12 +296,22 @@ export function Header({
           
           <div className="relative flex items-center justify-center">
             {user.avatarUrl ? (
-              <img 
-                src={user.avatarUrl} 
-                alt="Perfil" 
-                onClick={() => setShowNotifications(!showNotifications)}
-                className={`w-8 h-8 rounded-full object-cover border shadow-sm ml-1 cursor-pointer transition-all border-slate-100 ring-2 ring-primary/5 hover:ring-primary/20`}
-                referrerPolicy="no-referrer"
+              <LazyImage
+                src={user.avatarUrl}
+                alt="Perfil"
+                priority={true}
+                placeholder="skeleton"
+                style={{
+                  width: '2rem',
+                  height: '2rem',
+                  borderRadius: '9999px',
+                  objectFit: 'cover',
+                  border: '1px solid #e2e8f0',
+                  marginLeft: '0.25rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                className="ring-2 ring-primary/5 hover:ring-primary/20"
               />
             ) : null}
             {notifications.length > 0 && (
@@ -321,12 +335,12 @@ export function Header({
           <small className={`text-[10px] md:text-sm font-black uppercase tracking-[0.1em] block mb-0.5 ${
             isAdmin ? 'text-slate-600' : 'text-slate-600'
           }`}>
-            {translateText(getSectionLabel(), currentLanguage)}
+            {translate(getSectionLabel())}
           </small>
           <h2 className={`text-lg md:text-3xl font-black leading-none tracking-tight ${
             isAdmin ? 'text-slate-900' : 'text-primary'
           }`}>
-            {translateText(getMainTitle(), currentLanguage)}
+            {translate(getMainTitle())}
           </h2>
         </div>
         
@@ -381,12 +395,20 @@ export function Header({
           
           <div className="relative flex items-center">
             {user.avatarUrl ? (
-              <img 
-                src={user.avatarUrl} 
-                alt="Perfil" 
-                onClick={() => setShowNotifications(!showNotifications)}
-                className={`w-10 h-10 rounded-full object-cover border-2 shadow-sm cursor-pointer transition-all border-white ring-2 ring-primary/10 hover:ring-primary/30`}
-                referrerPolicy="no-referrer"
+              <LazyImage
+                src={user.avatarUrl}
+                alt="Perfil"
+                priority={true}
+                placeholder="skeleton"
+                style={{
+                  width: '2.5rem',
+                  height: '2.5rem',
+                  borderRadius: '9999px',
+                  objectFit: 'cover',
+                  border: '2px solid white',
+                  cursor: 'pointer',
+                }}
+                className="ring-2 ring-primary/10 hover:ring-primary/30 shadow-sm transition-all"
               />
             ) : null}
             {notifications.length > 0 && (

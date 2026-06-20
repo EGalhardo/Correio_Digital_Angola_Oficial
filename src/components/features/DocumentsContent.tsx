@@ -41,7 +41,7 @@ import {
   Printer
 } from 'lucide-react';
 import { Message, LanguageCode } from '../../types';
-import { translateText } from '../../utils/translator';
+import { useLanguage } from '../../hooks/useLanguage';
 
 const safeCopyToClipboard = (text: string): boolean => {
   try {
@@ -129,6 +129,7 @@ export function DocumentsContent({
   currentLanguage = 'pt'
 }: DocumentsContentProps) {
   const { institutions } = useInstitutions();
+  const { t: translate } = useLanguage();
   const [selectedInst, setSelectedInst] = useState<string>('Todas');
   const [selectedInvoiceForDetail, setSelectedInvoiceForDetail] = useState<any | null>(null);
 
@@ -372,7 +373,7 @@ export function DocumentsContent({
 
       if (payMethod === 'carteira') {
         if (walletBalance < activePayingInvoice.amountVal) {
-          alert("Saldo Insuficiente na Carteira Digital para liquidar esta fatura.");
+          alert("Saldo Insuficiente na QR Code para liquidar esta fatura.");
           return;
         }
         const nextBalance = walletBalance - activePayingInvoice.amountVal;
@@ -825,12 +826,12 @@ export function DocumentsContent({
           </div>
           <div>
             <h3 className="text-lg md:text-2xl font-black text-primary leading-tight">
-              {isInst ? translateText('Documentos Digitais', currentLanguage) : translateText('Facturas Recebidas', currentLanguage)}
+              {isInst ? translate('Documentos Digitais') : translate('Facturas Recebidas')}
             </h3>
             <p className="text-[10px] md:text-sm text-slate-600 font-black uppercase tracking-widest">
               {isInst 
-                ? `${unreadTotal} ${translateText('novos arquivados', currentLanguage)}` 
-                : `${invoices.filter(i => i.status === 'Pendente').length} ${translateText('faturas aguardando pagamento', currentLanguage)}`
+                ? `${unreadTotal} ${translate('novos arquivados')}` 
+                : `${invoices.filter(i => i.status === 'Pendente').length} ${translate('faturas aguardando pagamento')}`
               }
             </p>
           </div>
@@ -841,16 +842,16 @@ export function DocumentsContent({
             className="bg-primary text-white rounded-2xl px-6 py-3.5 flex items-center justify-center gap-3 shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all text-xs md:text-sm font-black"
           >
             <Plus size={18} />
-            {translateText("Submeter Documento", currentLanguage)}
+            {translate("Submeter Documento")}
           </button>
         )}
       </div>
 
       <div className="flex flex-wrap items-center gap-4 px-1 text-[10px] font-black uppercase tracking-widest">
-        {!isInst && <button onClick={() => setTab('carteira')} className="cda-link-text">{translateText("Carteira Digital", currentLanguage)}</button>}
-        {!isInst && <button onClick={() => setTab('historico')} className="cda-link-text">{translateText("Ver Histórico", currentLanguage)}</button>}
-        <button onClick={() => setTab('notificacoes')} className="cda-link-text">{translateText("Notificações", currentLanguage)}</button>
-        {isInst && <button onClick={() => setTab('inst-qrcode')} className="cda-link-text">{translateText("Validação QR", currentLanguage)}</button>}
+        {!isInst && <button onClick={() => setTab('qr-code')} className="cda-link-text">{translate("QR Code")}</button>}
+        {!isInst && <button onClick={() => setTab('historico')} className="cda-link-text">{translate("Ver Histórico")}</button>}
+        <button onClick={() => setTab('notificacoes')} className="cda-link-text">{translate("Notificações")}</button>
+        {isInst && <button onClick={() => setTab('inst-qrcode')} className="cda-link-text">{translate("Validação QR")}</button>}
       </div>
 
        {/* 1. Contentor "Instituições Conectadas" */}
@@ -858,9 +859,9 @@ export function DocumentsContent({
          <div className="flex flex-col md:flex-row md:items-center justify-between md:relative gap-2 mb-4 pb-2 border-b border-slate-50">
            <div className="flex items-center gap-2.5">
              <div className="w-1.5 h-6 bg-primary rounded-full" />
-             <h3 className="text-slate-950 font-black text-xs md:text-sm italic tracking-tighter uppercase">{translateText("Instituições Conectadas", currentLanguage)}</h3>
+             <h3 className="text-slate-950 font-black text-xs md:text-sm italic tracking-tighter uppercase">{translate("Instituições Conectadas")}</h3>
            </div>
-           <div className="md:absolute md:left-1/2 md:-translate-x-1/2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center mt-1 md:mt-0">{translateText("Governação Electrónica", currentLanguage)}</div>
+           <div className="md:absolute md:left-1/2 md:-translate-x-1/2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center mt-1 md:mt-0">{translate("Governação Electrónica")}</div>
            <div className="hidden md:block" />
          </div>
         
@@ -917,7 +918,7 @@ export function DocumentsContent({
                 <Coins size={16} />
               </div>
               <div>
-                <div className="text-[9px] font-black text-slate-405 uppercase tracking-widest leading-none">Saldo Carteira Digital</div>
+                <div className="text-[9px] font-black text-slate-405 uppercase tracking-widest leading-none">Saldo QR Code</div>
                 <div className="text-xs md:text-sm font-mono font-black text-emerald-700 mt-1">{walletBalance.toLocaleString('de-DE')} Kz</div>
               </div>
             </div>
@@ -1069,13 +1070,13 @@ export function DocumentsContent({
               <table className="mobile-data-table w-full text-left border-collapse min-w-[900px]">
                 <thead className="sticky top-0 z-10 bg-primary">
                   <tr className="bg-primary text-white text-[10px] font-black uppercase tracking-widest">
-                    <th className="py-4 px-5 rounded-l-2xl">{isInst ? translateText('CIDADÃO / REQUERENTE', currentLanguage) : translateText('ÓRGÃO EMISSOR', currentLanguage)}</th>
-                    <th className="py-4 px-5">{translateText('TIPO DE DOCUMENTO / ASSUNTO', currentLanguage)}</th>
-                    <th className="py-4 px-5">{translateText('CONTEÚDO / DETALHE', currentLanguage)}</th>
-                    <th className="py-4 px-5">{translateText('PRAZO DE VALIDADE', currentLanguage)}</th>
-                    <th className="py-4 px-5 text-center">{translateText('EMISSÃO (HORA / DATA)', currentLanguage)}</th>
-                    <th className="py-4 px-5 text-center">{translateText('NÍVEL DE RESTRICÇÃO', currentLanguage)}</th>
-                    <th className="py-4 px-5 text-center rounded-r-2xl">{translateText('AÇÕES', currentLanguage)}</th>
+                    <th className="py-4 px-5 rounded-l-2xl">{isInst ? translate('CIDADÃO / REQUERENTE') : translate('ÓRGÃO EMISSOR')}</th>
+                    <th className="py-4 px-5">{translate('TIPO DE DOCUMENTO / ASSUNTO')}</th>
+                    <th className="py-4 px-5">{translate('CONTEÚDO / DETALHE')}</th>
+                    <th className="py-4 px-5">{translate('PRAZO DE VALIDADE')}</th>
+                    <th className="py-4 px-5 text-center">{translate('EMISSÃO (HORA / DATA)')}</th>
+                    <th className="py-4 px-5 text-center">{translate('NÍVEL DE RESTRICÇÃO')}</th>
+                    <th className="py-4 px-5 text-center rounded-r-2xl">{translate('AÇÕES')}</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white">
@@ -1115,18 +1116,18 @@ export function DocumentsContent({
                         <td className="py-5 px-5">
                           <div className="space-y-1 text-left">
                             <div className="font-extrabold text-[#1e293b] text-xs md:text-sm tracking-tight">
-                              {translateText(item.details?.subject || item.preview.substring(0, 30), currentLanguage)}
+                              {translate(item.details?.subject || item.preview.substring(0, 30))}
                             </div>
                             <div className="text-[9px] text-[#94a3b8] font-black uppercase tracking-widest leading-none">
-                              {isInst ? translateText('REQUERIMENTO DE CERTIDÃO', currentLanguage) : translateText(item.protocol?.category || 'PROVA DE VIDA DIGITAL', currentLanguage)}
+                              {isInst ? translate('REQUERIMENTO DE CERTIDÃO') : translate(item.protocol?.category || 'PROVA DE VIDA DIGITAL')}
                             </div>
                           </div>
                         </td>
 
                         {/* Conteúdo / Detalhe Column */}
                         <td className="py-5 px-5">
-                          <div className="text-[#64748b] text-[11px] font-medium max-w-[280px] break-words whitespace-normal leading-relaxed" title={translateText(item.preview, currentLanguage)}>
-                            {translateText(item.preview, currentLanguage)}
+                          <div className="text-[#64748b] text-[11px] font-medium max-w-[280px] break-words whitespace-normal leading-relaxed" title={translate(item.preview)}>
+                            {translate(item.preview)}
                           </div>
                         </td>
 
@@ -1135,7 +1136,7 @@ export function DocumentsContent({
                           <div className="flex items-center">
                             <span className="inline-flex items-center gap-1.5 text-[#e05252] text-[9px] font-semibold tracking-wider font-sans">
                               <span className="w-1.5 h-1.5 rounded-full bg-[#f87171] animate-pulse shrink-0" />
-                              {translateText('EXPIRA', currentLanguage)}: {translateText(item.details?.deadline || item.protocol?.deadlineDate || 'UNLIMITED', currentLanguage)}
+                              {translate('EXPIRA')}: {translate(item.details?.deadline || item.protocol?.deadlineDate || 'UNLIMITED')}
                             </span>
                           </div>
                         </td>
@@ -1155,7 +1156,7 @@ export function DocumentsContent({
                               ? 'text-[#e05252]'
                               : 'text-indigo-600'
                           }`}>
-                            {translateText(item.sensitivity || (isUrgente ? 'Restrito' : 'Público'), currentLanguage)}
+                            {translate(item.sensitivity || (isUrgente ? 'Restrito' : 'Público'))}
                           </span>
                         </td>
 
@@ -1166,7 +1167,7 @@ export function DocumentsContent({
                             onClick={() => handleSelectMessage(item)}
                             className="text-[9.5px] font-black uppercase text-indigo-650 hover:text-indigo-850 transition-colors tracking-widest hover:underline cursor-pointer bg-transparent border-0 outline-none"
                           >
-                            {isInst ? translateText('ANALISAR DOCUMENTO', currentLanguage) : translateText('ABRIR DOCUMENTO', currentLanguage)}
+                            {isInst ? translate('ANALISAR DOCUMENTO') : translate('ABRIR DOCUMENTO')}
                           </button>
                         </td>
                       </tr>

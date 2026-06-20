@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Video, 
@@ -16,11 +16,123 @@ import {
   RefreshCw, 
   AlertCircle, 
   ShieldCheck,
-  Users
+  Users,
+  Maximize2,
+  Minimize2,
+  Mic,
+  MicOff,
+  Camera,
+  CameraOff,
+  Signal,
+  Timer
 } from 'lucide-react';
 import { Message, VideoSession, VideoSessionEvent } from '../../types';
 import { useSession } from '../../services/sessionStore';
 import { VideoSessionService } from '../../services/videoSessionService';
+import { useLanguage } from '../../hooks/useLanguage';
+
+/**
+ * Componente JitsiEmbed - Integra sala Jitsi Meet via iframe
+ */
+interface JitsiEmbedProps {
+  roomName: string;
+  subject: string;
+  isActive: boolean;
+  sessionId: string;
+}
+
+function JitsiEmbed({ roomName, subject, isActive, sessionId }: JitsiEmbedProps) {
+  const t = useLanguage().t;
+  
+  // Generate unique room name with timestamp for security
+  const secureRoomName = useMemo(() => {
+    return `cda-atendimento-${sessionId.slice(-8)}-${Date.now().toString().slice(-6)}`;
+  }, [sessionId]);
+  
+  const secureUrl = useMemo(() => `https://meet.jit.si/${secureRoomName}`, [secureRoomName]);
+  
+  if (!isActive) {
+    return (
+      <div className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden relative shadow-xl">
+        {/* Header Bar */}
+        <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-r from-indigo-900/60 to-slate-900/60 backdrop-blur-sm px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-primary animate-pulse" />
+            <span className="text-white text-[11px] font-black uppercase tracking-wider">
+              Correio Digital Angola
+            </span>
+          </div>
+          <span className="text-indigo-300 text-[10px] font-semibold truncate max-w-[160px]">
+            {subject}
+          </span>
+        </div>
+        
+        {/* Placeholder */}
+        <div className="aspect-video flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
+          <div className="text-center space-y-4 pt-8">
+            <div className="w-20 h-20 bg-indigo-600/20 rounded-full flex items-center justify-center mx-auto">
+              <Video size={36} className="text-indigo-400" />
+            </div>
+            <div>
+              <p className="text-slate-300 text-sm font-bold">
+                VideoAtendimento
+              </p>
+              <p className="text-slate-500 text-[11px] mt-1">
+                Clique em "Entrar" para iniciar a conferência
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Footer Info */}
+        <div className="bg-slate-900/80 px-4 py-2 border-t border-slate-700">
+          <p className="text-[9px] text-slate-400 text-center">
+            🔒 Sala segura com acesso controlado via CDA
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden relative shadow-xl">
+      {/* Header Bar */}
+      <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-r from-emerald-900/80 to-slate-900/80 backdrop-blur-sm px-4 py-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-white text-[10px] font-black uppercase tracking-wider">
+            Correio Digital Angola
+          </span>
+        </div>
+        <span className="text-emerald-300 text-[9px] font-semibold truncate max-w-[180px]">
+          {subject}
+        </span>
+      </div>
+
+      {/* Jitsi iframe */}
+      <iframe
+        src={secureUrl}
+        style={{ border: '0px none', width: '100%', height: '480px' }}
+        name="Jitsi"
+        scrolling="no"
+        frameBorder="0"
+        marginHeight="0"
+        marginWidth="0"
+        allowFullScreen={true}
+        allow="camera; microphone; display-capture; autoplay; clipboard-write"
+        title="Videoatendimento Oficial Correio Digital Angola"
+        className="w-full pt-8"
+      />
+
+      {/* Info Banner */}
+      <div className="absolute bottom-0 left-0 right-0 bg-slate-900/90 backdrop-blur-sm px-4 py-2 border-t border-slate-700">
+        <p className="text-[9px] text-slate-400 text-center">
+          💡 <strong className="text-indigo-400">Atributo de Segurança:</strong> A diretiva <code className="bg-slate-800 px-1 rounded text-indigo-300">allow="camera; microphone..."</code> autoriza acesso aos dispositivos de forma ciber-segura
+        </p>
+      </div>
+    </div>
+  );
+}
 
 interface VideoSessionPanelProps {
   message?: Message;

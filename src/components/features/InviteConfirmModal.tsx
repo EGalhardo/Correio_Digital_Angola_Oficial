@@ -34,7 +34,7 @@ export function InviteConfirmModal({
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative bg-white w-full max-w-md rounded-[28px] md:rounded-[32px] p-5 sm:p-6 md:p-8 shadow-2xl border border-line max-h-[92vh] overflow-y-auto"
+            className="relative bg-white w-full max-w-sm rounded-[28px] md:rounded-[32px] p-4 sm:p-5 md:p-6 mx-3 shadow-2xl border border-line max-h-[92vh] overflow-y-auto"
           >
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
               <Send size={32} className="text-primary" />

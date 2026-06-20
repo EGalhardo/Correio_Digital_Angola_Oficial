@@ -131,6 +131,7 @@ const createMessagePayload = ({
   priority_scale: msg.priorityScale || 'Normal',
   deadline_hours_remaining: msg.deadlineHoursRemaining || null,
   protocol_id: null,
+  protocol_number: msg.protocol?.protocolNumber || null,
 });
 
 const createStateHistoryPayload = ({
@@ -977,7 +978,7 @@ export const supabaseService = {
         protocol_number: p.protocolNumber,
         issuer_institution: p.issuerInstitution,
         official_issue_date: p.officialIssueDate || new Date().toISOString().split('T')[0],
-        official_time: p.officialTime || new Date().toLocaleTimeString(),
+        official_time: p.officialTime ? p.officialTime.split(" ")[0].padStart(8, "0") : "12:00:00",
         issuer_responsible: p.issuerResponsible || 'Sistema CADA',
         category: p.category || 'Geral',
         document_type: p.documentType || 'Correspondência',

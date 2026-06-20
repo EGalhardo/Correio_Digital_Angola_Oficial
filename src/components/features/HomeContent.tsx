@@ -7,8 +7,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ShieldCheck, Mail, FileText, Send, Clock } from 'lucide-react';
 import { HIGHLIGHT_SLIDES, INST_HIGHLIGHT_SLIDES } from '../../constants/data';
 import { Message, LanguageCode } from '../../types';
-import { translateText } from '../../utils/translator';
 import { useLanguage } from '../../hooks/useLanguage';
+import { LazyImage } from '../ui/LazyImage';
+import { AnimatedCounter } from '../ui/AnimatedCounter';
 
 interface HomeContentProps {
   activeSlide: number;
@@ -54,18 +55,22 @@ export function HomeContent({
             transition={{ duration: 0.8 }}
             className="absolute inset-0"
           >
-            <motion.img 
+            <LazyImage
               src={isMobile && currentSlide.mobileImage 
                 ? currentSlide.mobileImage 
                 : currentSlide.image
-              } 
+              }
               alt={t(currentSlide.title)}
-              initial={{ scale: 1.05 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 8, ease: "linear" }}
-              className="w-full h-full object-cover object-center"
-              loading="eager"
-              referrerPolicy="no-referrer"
+              priority={true}
+              placeholder="skeleton"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+              }}
+              className="w-full h-full"
             />
           </motion.div>
         </AnimatePresence>
@@ -91,11 +96,14 @@ export function HomeContent({
         <div className="bg-white border border-slate-200 rounded-[28px] md:rounded-[32px] p-4 md:p-6 flex items-center gap-4 md:gap-6 shadow-sm overflow-hidden relative group">
           <div className={`w-12 h-12 md:w-16 md:h-16 ${isInst ? 'bg-white border-slate-100' : 'bg-green-600 border-green-600'} rounded-2xl flex items-center justify-center shadow-sm shrink-0 border`}>
             {isInst ? (
-              <img 
+              <LazyImage 
                 src="https://i.postimg.cc/1XDX0qsQ/agt.png" 
                 alt="AGT" 
+                style={{
+                  width: '2.5rem',
+                  height: '2.5rem',
+                }}
                 className="w-10 h-10 md:w-12 md:h-12 object-contain"
-                referrerPolicy="no-referrer"
               />
             ) : (
               <ShieldCheck size={24} className="md:w-8 md:h-8 text-white" />
@@ -123,7 +131,13 @@ export function HomeContent({
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-[9px] md:text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1 truncate">{t("Novas Mensagens")}</div>
-            <div className="text-base md:text-xl font-black text-slate-900 leading-tight italic tracking-tighter">{unreadTotal} {t("Não Lidas")}</div>
+            <AnimatedCounter
+              to={unreadTotal}
+              duration={1200}
+              className="text-base md:text-xl font-black text-slate-900 leading-tight italic tracking-tighter"
+              triggerOnVisible
+            />
+            <span className="text-base md:text-xl font-black text-slate-900 leading-tight italic tracking-tighter"> {t("Não Lidas")}</span>
             <div className="text-[9px] md:text-xs text-primary font-bold mt-1">{t("Ver Correspondências")} &rarr;</div>
           </div>
         </div>
@@ -133,7 +147,7 @@ export function HomeContent({
         <button onClick={() => setTab('historico')} className="cda-link-text">{t("Ver Histórico")}</button>
         <button onClick={() => setTab('notificacoes')} className="cda-link-text">{t("Notificações")}</button>
         {!isInst && (
-          <button onClick={() => setTab('carteira')} className="cda-link-text">{t("Carteira Digital")}</button>
+          <button onClick={() => setTab('qr-code')} className="cda-link-text">{t("QR Code")}</button>
         )}
         {isInst && (
           <button onClick={() => setTab('inst-qrcode')} className="cda-link-text">{t("Validação QR")}</button>
@@ -188,9 +202,9 @@ export function HomeContent({
             <div className="flex items-center justify-between mb-5 shrink-0">
                <div className="flex items-center gap-2">
                   <Mail size={16} className="text-red-500" />
-                  <h3 className="text-slate-950 font-black text-sm md:text-base italic tracking-tighter uppercase">{t("Não Lidas")}</h3>
+                  <h3 className="text-slate-950 font-black text-sm md:text-base italic tracking-tighter">{t("Não Lidas")}</h3>
                </div>
-               <span className="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-black rounded-full shadow-sm animate-pulse">LERT</span>
+               <span className="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-black rounded-full shadow-sm animate-pulse">NOVO</span>
             </div>
             <div className="h-[320px] overflow-y-auto pr-1 space-y-3 custom-scrollbar">
               {inbox.filter(m => m.unread).map(m => (
@@ -210,9 +224,9 @@ export function HomeContent({
           <div className="flex items-center justify-between mb-5 shrink-0">
              <div className="flex items-center gap-2">
                 <FileText size={16} className="text-emerald-500" />
-                <h3 className="text-slate-950 font-black text-sm md:text-base italic tracking-tighter uppercase">{t("Lidas")}</h3>
+                <h3 className="text-slate-950 font-black text-sm md:text-base italic tracking-tighter">{t("Lidas")}</h3>
              </div>
-             <span className="text-[9px] font-black text-slate-400 tracking-widest uppercase">Histórico</span>
+             <span className="text-[9px] font-black text-slate-400 tracking-widest">Histórico</span>
           </div>
           <div className="h-[320px] overflow-y-auto pr-1 space-y-3 custom-scrollbar">
             {inbox.filter(m => !m.unread).map(m => (
@@ -231,7 +245,7 @@ export function HomeContent({
           <div className="flex items-center justify-between mb-5 shrink-0">
              <div className="flex items-center gap-2">
                 <Send size={16} className="text-blue-500" />
-                <h3 className="text-slate-950 font-black text-sm md:text-base italic tracking-tighter uppercase">{t("Enviadas")}</h3>
+                <h3 className="text-slate-950 font-black text-sm md:text-base italic tracking-tighter">{t("Enviadas")}</h3>
              </div>
              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
           </div>

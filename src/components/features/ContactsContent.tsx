@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Users, Plus, Search, ShieldCheck, Trash2, Info, Edit, User, CreditCard, CheckCircle, X, Check, Bell } from 'lucide-react';
+import { Users, Plus, Search, ShieldCheck, Trash2, Info, Edit, User, CreditCard, CheckCircle, X, Check, Bell, Phone, UserPlus, ChevronDown } from 'lucide-react';
 import { Contact } from '../../types';
 
 interface ContactsContentProps {
@@ -29,6 +29,31 @@ export function ContactsContent({
 }: ContactsContentProps) {
   const [selectedClassification, setSelectedClassification] = useState<'Todos' | 'Emergência' | 'Normal'>('Todos');
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
+  const [editForm, setEditForm] = useState<{ name: string; bi: string; relation: string; phone?: string; type?: 'Normal' | 'Emergência' }>({
+    name: '',
+    bi: '',
+    relation: '',
+    phone: '',
+    type: 'Normal',
+  });
+
+  const openEditModal = (contact: Contact) => {
+    setEditingContact(contact);
+    setEditForm({
+      name: contact.name || '',
+      bi: contact.bi || '',
+      relation: contact.relation || '',
+      phone: (contact as any).phone || '',
+      type: contact.type || 'Normal',
+    });
+  };
+
+  const handleSaveEdit = () => {
+    if (editingContact && onUpdateContactType) {
+      onUpdateContactType(editingContact.id, editForm.type || 'Normal');
+    }
+    setEditingContact(null);
+  };
 
   const handleUpdateProtocol = (type: 'Normal' | 'Emergência') => {
     if (editingContact && onUpdateContactType) {
@@ -189,7 +214,7 @@ export function ContactsContent({
                       <td className="py-4 px-5 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <button 
-                            onClick={() => setEditingContact(contact)}
+                            onClick={() => openEditModal(contact)}
                             className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all border-0 bg-transparent cursor-pointer"
                             title="Editar contacto e protocolo"
                           >
@@ -203,7 +228,7 @@ export function ContactsContent({
                             <Trash2 size={14} />
                           </button>
                           <button 
-                            onClick={() => setEditingContact(contact)}
+                            onClick={() => openEditModal(contact)}
                             className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-all border-0 bg-transparent cursor-pointer"
                             title="Informações de Vínculo"
                           >
@@ -246,129 +271,209 @@ export function ContactsContent({
 
       <AnimatePresence>
         {editingContact && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-[28px] p-6 md:p-8 max-w-md w-full shadow-2xl border border-slate-100 space-y-6 text-left"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setEditingContact(null)}
+              className="absolute inset-0 bg-slate-950/40 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.93, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.93, opacity: 0, y: 15 }}
+              className="relative bg-white w-full max-w-[540px] max-h-[95vh] rounded-[28px] shadow-[0_25px_60px_-15px_rgba(15,23,42,0.18)] border border-slate-100 flex flex-col overflow-hidden mx-auto p-6 md:p-8 space-y-6"
             >
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4 relative">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100 shadow-sm">
-                    <Edit size={18} className="text-blue-600" />
-                  </div>
-                  <div>
-                    <h2 className="font-black text-[#0c2340] text-base md:text-lg uppercase tracking-tight leading-none italic">Editar Contacto</h2>
-                    <p className="text-[10px] text-blue-600 font-extrabold uppercase tracking-widest mt-1">Vínculo de Confiança</p>
-                  </div>
+              {/* Header Area */}
+              <div className="flex items-center gap-4 text-left relative shrink-0">
+                <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center shrink-0 border border-blue-100 shadow-sm">
+                  <Edit size={24} className="text-blue-600" strokeWidth={2.2} />
                 </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-xl md:text-[23px] font-black text-[#0c2340] italic uppercase tracking-tighter leading-none mb-1">
+                    Editar Contacto
+                  </h3>
+                  <p className="text-blue-600 font-extrabold text-[10px] uppercase tracking-widest font-sans leading-none">
+                    PROTOCOLO DE REDES DE SEGURANÇA
+                  </p>
+                </div>
+                {/* Corner close button */}
                 <button
-                  type="button"
                   onClick={() => setEditingContact(null)}
-                  className="p-1.5 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-700 transition-colors border-0 bg-transparent cursor-pointer"
-                  aria-label="Fechar"
+                  className="absolute top-0 right-0 text-slate-400 hover:text-slate-600 transition-colors p-2 hover:bg-slate-50 rounded-full"
+                  id="close-edit-contact"
                 >
                   <X size={18} />
                 </button>
               </div>
 
-              {/* General Contact Info / Contacto de Confiança */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-indigo-700 font-bold uppercase tracking-wider text-xs">
-                  <User size={16} />
-                  <span>Contacto de Confiança</span>
-                </div>
-
-                <div className="flex items-center gap-4 bg-slate-50/55 p-4 rounded-2xl border border-slate-100">
-                  <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-800 font-black flex items-center justify-center text-base uppercase tracking-wider shadow-inner shrink-0">
-                    {(() => {
-                      const names = editingContact.name?.split(' ') || [];
-                      if (names.length >= 2) {
-                        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
-                      }
-                      return (editingContact.name?.substring(0, 2) || 'CO').toUpperCase();
-                    })()}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <span id="contact-name" className="block text-sm font-black text-slate-900 uppercase tracking-tight truncate">
-                      {editingContact.name}
-                    </span>
-                    <span className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mt-0.5">
-                      Relação: {editingContact.relation}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white p-3.5 rounded-2xl border border-slate-200">
-                    <small className="block text-[8.5px] font-black text-slate-400 uppercase tracking-wider mb-1.5">Cédula / Identidade BI</small>
-                    <div className="flex items-center gap-1.5">
-                      <CreditCard size={12} className="text-slate-400" />
-                      <span className="font-mono text-[11px] font-bold text-slate-800 tracking-wider block shrink-0">{editingContact.bi}</span>
-                    </div>
-                  </div>
-                  <div className="bg-white p-3.5 rounded-2xl border border-slate-200">
-                    <small className="block text-[8.5px] font-black text-slate-400 uppercase tracking-wider mb-1.5">Estado do Vínculo</small>
-                    <div className="flex items-center gap-1">
-                      <CheckCircle size={13} className="text-[#10b981]" />
-                      <span className="text-[10px] font-black block uppercase tracking-wide text-[#10b981]">
-                        {editingContact.status || 'Confirmado'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Switch active protocol */}
-                <div className="space-y-2 pt-2">
+              {/* Content Form Scrollable */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar space-y-6 pr-1 text-left">
+                {/* Identificação do Contacto Section */}
+                <div className="space-y-4">
                   <div className="flex items-center gap-2 text-indigo-700 font-bold uppercase tracking-wider text-xs">
-                    <ShieldCheck size={16} />
-                    <span>Protocolo Activo de Comunicação</span>
+                    <User size={16} />
+                    <span>Identificação do Contacto</span>
                   </div>
-                  
-                  <div className="grid grid-cols-2 gap-3.5">
-                    {(['Normal', 'Emergência'] as const).map((t) => {
-                      const isCurrent = (editingContact.type || 'Normal') === t;
-                      return (
-                        <button
-                          key={t}
-                          type="button"
-                          onClick={() => handleUpdateProtocol(t)}
-                          className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border gap-1.5 transition-all cursor-pointer ${
-                            isCurrent
-                              ? 'bg-emerald-50 text-emerald-800 border-emerald-300 ring-4 ring-emerald-50/50 font-black'
-                              : 'bg-white text-slate-450 border-slate-200 hover:text-slate-700 hover:bg-slate-50'
-                          }`}
-                        >
-                          <ShieldCheck size={16} className={isCurrent ? 'text-emerald-500' : 'text-slate-300'} />
-                          <span className="text-[10px] uppercase font-black tracking-widest">{t}</span>
-                        </button>
-                      );
-                    })}
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Tipo de Contacto *</label>
+                    <div className="bg-slate-50/50 p-1 rounded-2xl flex w-full border border-slate-200">
+                      <button
+                        type="button"
+                        onClick={() => setEditForm(prev => ({ ...prev, type: 'Normal' }))}
+                        className={`flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                          editForm.type === 'Normal'
+                            ? 'bg-[#0c2340] text-white shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100/50 bg-transparent border-0'
+                        }`}
+                        id="edit-tab-normal-contact"
+                      >
+                        <User size={14} />
+                        Contacto Normal
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditForm(prev => ({ ...prev, type: 'Emergência' }))}
+                        className={`flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                          editForm.type === 'Emergência'
+                            ? 'bg-[#0c2340] text-white shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100/50 bg-transparent border-0'
+                        }`}
+                        id="edit-tab-emergency-contact"
+                      >
+                        <Bell size={14} />
+                        Contacto de Emergência
+                      </button>
+                    </div>
                   </div>
-                  <p className="text-[10px] text-slate-500 italic font-semibold mt-1.5 leading-normal pl-1">
-                    * O protocolo regulamenta canais de transmissão prioritária de dados e notificações urgentes no âmbito estatal.
-                  </p>
+
+                  {/* Form fields in grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Nome Completo */}
+                    <div className="grid gap-1.5">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Nome Completo *</label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                          <User size={15} />
+                        </span>
+                        <input
+                          placeholder="Ex: Edlasio Galhardo"
+                          value={editForm.name}
+                          onChange={e => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                          className="w-full bg-white border border-slate-200 focus:border-[#0c2340] rounded-2xl pl-11 pr-4 py-3.5 text-xs text-slate-800 outline-none transition-all font-bold placeholder:text-slate-400"
+                          id="edit-contact-name-input"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Número de BI Oficial */}
+                    <div className="grid gap-1.5">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Número de BI Oficial *</label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                          <CreditCard size={15} />
+                        </span>
+                        <input
+                          placeholder="000000000LA000"
+                          value={editForm.bi}
+                          onChange={e => setEditForm(prev => ({ ...prev, bi: e.target.value }))}
+                          className="w-full bg-white border border-slate-200 focus:border-[#0c2340] rounded-2xl pl-11 pr-4 py-3.5 text-xs text-slate-800 outline-none transition-all font-mono font-bold tracking-wider placeholder:text-slate-400"
+                          maxLength={14}
+                          id="edit-contact-bi-input"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Grau de Parentesco */}
+                    <div className="grid gap-1.5">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Grau de Parentesco / Relação *</label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                          <Users size={15} />
+                        </span>
+                        <input
+                          placeholder="Ex: Mãe, Irmão, Advogado"
+                          value={editForm.relation}
+                          onChange={e => setEditForm(prev => ({ ...prev, relation: e.target.value }))}
+                          className="w-full bg-white border border-slate-200 focus:border-[#0c2340] rounded-2xl pl-11 pr-4 py-3.5 text-xs text-slate-800 outline-none transition-all font-bold placeholder:text-slate-400"
+                          id="edit-contact-relation-input"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Contacto / Telefone */}
+                    <div className="grid gap-1.5">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Contacto / Telefone *</label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                          <Phone size={15} />
+                        </span>
+                        <input
+                          placeholder="+244 923 000 000"
+                          value={editForm.phone || ''}
+                          onChange={e => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                          className="w-full bg-white border border-slate-200 focus:border-[#0c2340] rounded-2xl pl-11 pr-4 py-3.5 text-xs text-slate-800 outline-none transition-all font-bold placeholder:text-slate-400"
+                          id="edit-contact-phone-input"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Line Divider */}
+                <div className="border-t border-dashed border-slate-200 my-1" />
+
+                {/* Estágio de Autorização Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-[#10b981] font-bold uppercase tracking-wider text-xs">
+                    <CheckCircle size={16} />
+                    <span>Estágio de Autorização</span>
+                  </div>
+
+                  <div className="grid gap-1.5">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Permissão de Acesso *</label>
+                    <div className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-slate-800">
+                        <CheckCircle size={16} className="text-[#10b981]" />
+                        <span className="text-xs font-bold">Autorizado</span>
+                      </div>
+                      <ChevronDown size={14} className="text-slate-400" />
+                    </div>
+                  </div>
+
+                  {/* Info block */}
+                  <div className="bg-[#f0fdf4] border border-emerald-100 p-4 rounded-2xl flex gap-3 items-start select-none">
+                    <Info size={18} className="text-[#10b981] shrink-0 mt-0.5" />
+                    <p className="text-slate-700 text-[10.5px] font-medium leading-relaxed">
+                      Utilizadores autorizados poderão aceder aos dados de contacto em situações previstas no protocolo institucional de segurança e emergência.
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              {/* Action buttons */}
-              <div className="flex items-center gap-3 pt-2">
+              {/* Bottom Actions Area */}
+              <div className="flex items-center gap-3 pt-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => setEditingContact(null)}
                   className="flex-1 bg-white border border-slate-200 text-slate-700 py-3.5 rounded-full font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer hover:bg-slate-50 transition-all"
+                  id="cancel-edit-contact-btn"
                 >
                   <X size={14} />
                   Cancelar
                 </button>
+
                 <button
                   type="button"
-                  onClick={() => setEditingContact(null)}
-                  className="flex-[2] bg-[#0c2340] hover:bg-[#152e4d] text-white py-3.5 rounded-full font-black text-xs uppercase tracking-widest shadow-lg flex items-center justify-center gap-2.5 transition-all duration-300 cursor-pointer active:scale-98"
+                  onClick={handleSaveEdit}
+                  disabled={!editForm.name || !editForm.bi}
+                  className="flex-[2] bg-[#0c2340] hover:bg-[#152e4d] text-white py-3.5 rounded-full font-black text-xs uppercase tracking-widest shadow-lg flex items-center justify-center gap-2.5 transition-all duration-300 disabled:opacity-40 disabled:pointer-events-none cursor-pointer active:scale-98"
+                  id="confirm-edit-contact-btn"
                 >
                   <Check size={14} />
-                  Confirmar e Fechar
+                  Guardar Alterações
                 </button>
               </div>
             </motion.div>

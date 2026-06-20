@@ -8,7 +8,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Search, QrCode, ShieldCheck, Info, CreditCard, Globe, Car, FileText, ArrowLeft, Plus, Clock, CheckCircle2, XCircle, Building2, ChevronRight, X } from 'lucide-react';
 import { Document, DocRequest, LanguageCode } from '../../types';
 import { useInstitutions } from '../../services/institutionStore';
-import { translateText } from '../../utils/translator';
+import { useLanguage } from '../../hooks/useLanguage';
+import { LazyImage } from '../ui/LazyImage';
 
 export interface WalletContentProps {
   filteredDocs: Document[];
@@ -55,6 +56,8 @@ export function WalletContent({
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [showRequestsHistory, setShowRequestsHistory] = useState(false);
   const [requestData, setRequestData] = useState({ institution: 'AGT', docType: '' });
+  
+  const { t: translate } = useLanguage();
 
   const INSTITUTIONS = institutions.map(i => i.name);
   
@@ -109,8 +112,8 @@ export function WalletContent({
             <QrCode size={24} />
           </div>
           <div>
-            <h3 className="text-lg md:text-2xl font-black text-primary leading-tight uppercase italic tracking-tighter">{translateText("Carteira Digital", currentLanguage)}</h3>
-            <p className="text-[10px] md:text-sm text-slate-600 font-black uppercase tracking-widest">{filteredDocs.length} {translateText("Documentos Ativos", currentLanguage)}</p>
+            <h3 className="text-lg md:text-2xl font-black text-primary leading-tight uppercase italic tracking-tighter">{translate("Carteira Digital")}</h3>
+            <p className="text-[10px] md:text-sm text-slate-600 font-black uppercase tracking-widest">{filteredDocs.length} {translate("Documentos Ativos")}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -119,21 +122,21 @@ export function WalletContent({
             onClick={() => setTab('solicitar-documento')}
             className="bg-primary text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-primary/90 transition-all flex items-center gap-2 shadow-lg shadow-primary/20"
           >
-            <Plus size={18} /> {translateText("Solicitar Documento", currentLanguage)}
+            <Plus size={18} /> {translate("Solicitar Documento")}
           </button>
           <div className="hidden md:flex bg-success/10 border border-success/20 px-4 py-2 rounded-xl items-center gap-3 transition-opacity">
             <ShieldCheck size={16} className="text-success" />
-            <span className="text-[9px] md:text-xs font-black text-success uppercase tracking-wider">{translateText("Segurança CDA", currentLanguage)}</span>
+            <span className="text-[9px] md:text-xs font-black text-success uppercase tracking-wider">{translate("Segurança CDA")}</span>
           </div>
         </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-4 px-1 text-[10px] font-black uppercase tracking-widest">
-        <button onClick={() => setTab('pasta-digital')} className="cda-link-text">{translateText("Abrir Pasta Digital", currentLanguage)}</button>
-        <button onClick={() => setTab('historico')} className="cda-link-text">{translateText("Ver Histórico", currentLanguage)}</button>
-        <button onClick={() => setTab('notificacoes')} className="cda-link-text">{translateText("Notificações", currentLanguage)}</button>
+        <button onClick={() => setTab('pasta-digital')} className="cda-link-text">{translate("Abrir Pasta Digital")}</button>
+        <button onClick={() => setTab('historico')} className="cda-link-text">{translate("Ver Histórico")}</button>
+        <button onClick={() => setTab('notificacoes')} className="cda-link-text">{translate("Notificações")}</button>
         <button onClick={() => setShowRequestsHistory(prev => !prev)} className="cda-link-text">
-          {showRequestsHistory ? translateText('Ocultar solicitações', currentLanguage) : translateText('Ver solicitações', currentLanguage)}
+          {showRequestsHistory ? translate('Ocultar solicitações') : translate('Ver solicitações')}
         </button>
       </div>
 
@@ -218,7 +221,11 @@ export function WalletContent({
                     </div>
                     <div className="text-right">
                        <div className="w-12 h-8 ml-auto mb-2 opacity-40">
-                         <img src="https://i.postimg.cc/Rq5TKbdk/Correio-Digital-Angola.png" alt="" className="w-full invert" />
+                         <LazyImage 
+                           src="https://i.postimg.cc/Rq5TKbdk/Correio-Digital-Angola.png" 
+                           alt="" 
+                           style={{ width: '100%', height: '100%', filter: 'invert(1)' }}
+                         />
                        </div>
                       <div className="text-white/70 text-[9px] font-black uppercase tracking-[0.2em] leading-none mb-1">Cédula Digital</div>
                       <div className="text-white font-mono text-[10px] md:text-xs font-black tracking-[0.2em]">{doc.code}</div>

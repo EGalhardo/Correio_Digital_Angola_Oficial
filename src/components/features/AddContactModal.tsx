@@ -16,7 +16,8 @@ import {
   Info, 
   X, 
   Check, 
-  ChevronDown 
+  ChevronDown,
+  Edit
 } from 'lucide-react';
 
 interface AddContactModalProps {
@@ -51,10 +52,10 @@ export function AddContactModal({
             exit={{ scale: 0.93, opacity: 0, y: 15 }}
             className="relative bg-white w-full max-w-[540px] max-h-[95vh] rounded-[28px] shadow-[0_25px_60px_-15px_rgba(15,23,42,0.18)] border border-slate-100 flex flex-col overflow-hidden mx-auto p-6 md:p-8 space-y-6"
           >
-            {/* Header Area */}
+            {/* Header Area - MESMO ESTILO DO EDITAR CONTACTO */}
             <div className="flex items-center gap-4 text-left relative shrink-0">
-              <div className="w-14 h-14 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center shrink-0 border border-amber-100 shadow-sm">
-                <UserPlus size={24} className="text-amber-500" strokeWidth={2.2} />
+              <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center shrink-0 border border-blue-100 shadow-sm">
+                <Edit size={24} className="text-blue-600" strokeWidth={2.2} />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-xl md:text-[23px] font-black text-[#0c2340] italic uppercase tracking-tighter leading-none mb-1">
@@ -252,4 +253,3 @@ export function AddContactModal({
     </AnimatePresence>
   );
 }
-

@@ -358,7 +358,29 @@ export function GovContactsContent({
     localStorage.setItem(key, JSON.stringify(workers));
   }, [workers, appMode]);
 
-  const PROVINCES = ['Luanda', 'Benguela', 'Huíla', 'Cabinda', 'Bengo', 'Huambo'];
+  const PROVINCES = [
+    'Bengo',
+    'Icolo e Bengo',
+    'Benguela',
+    'Bié',
+    'Cabinda',
+    'Cuando',
+    'Cubango',
+    'Cuanza Norte',
+    'Cuanza Sul',
+    'Cunene',
+    'Huambo',
+    'Huíla',
+    'Luanda',
+    'Lunda Norte',
+    'Lunda Sul',
+    'Malanje',
+    'Moxico',
+    'Moxico Leste',
+    'Namibe',
+    'Uíge',
+    'Zaire'
+  ];
 
   // Citizen State (adapted from Interoperabilidade page for Admin "Usuários" page)
   interface Citizen {
@@ -481,7 +503,7 @@ export function GovContactsContent({
               'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=250&h=250&fit=crop&crop=face'
             ],
             activityHistory: c.activityHistory || [
-              { action: 'Acesso à Carteira Digital', timestamp: '12/06/2026 10:15', ip: '197.231.42.15' },
+              { action: 'Acesso à QR Code', timestamp: '12/06/2026 10:15', ip: '197.231.42.15' },
               { action: 'Despacho de Correspondência Recebida', timestamp: '10/06/2026 14:22', ip: '197.231.42.15' }
             ],
             biNumber: c.biNumber || c.bi || `00${Math.floor(100000 + Math.random() * 900000)}LA041`,
@@ -523,7 +545,7 @@ export function GovContactsContent({
           'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=250&h=250&fit=crop&crop=face'
         ],
         activityHistory: [
-          { action: 'Acesso à Carteira Digital', timestamp: '11/06/2026 14:15', ip: '197.231.42.15' },
+          { action: 'Acesso à QR Code', timestamp: '11/06/2026 14:15', ip: '197.231.42.15' },
           { action: 'Despacho de Correspondência Recebida', timestamp: '09/06/2026 11:22', ip: '197.231.42.15' },
           { action: 'Assinatura Eletrónica de Certidão', timestamp: '05/06/2026 09:10', ip: '197.231.42.15' }
         ],
@@ -559,7 +581,7 @@ export function GovContactsContent({
           'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=250&h=250&fit=crop&crop=face'
         ],
         activityHistory: [
-          { action: 'Acesso à Carteira Digital', timestamp: '12/06/2026 08:31', ip: '197.88.10.150' },
+          { action: 'Acesso à QR Code', timestamp: '12/06/2026 08:31', ip: '197.88.10.150' },
           { action: 'Consulta de Carta de Condução', timestamp: '10/06/2026 16:45', ip: '197.88.10.150' }
         ],
         facePhoto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=250&h=250&fit=crop&crop=face'
@@ -628,7 +650,7 @@ export function GovContactsContent({
           'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=250&h=250&fit=crop&crop=face'
         ],
         activityHistory: [
-          { action: 'Acesso à Carteira Digital', timestamp: '12/06/2026 10:44', ip: '197.220.14.77' },
+          { action: 'Acesso à QR Code', timestamp: '12/06/2026 10:44', ip: '197.220.14.77' },
           { action: 'Consulta de Título de Propriedade', timestamp: '12/06/2026 10:41', ip: '197.220.14.77' },
           { action: 'Apresentação de BI Eletrónico', timestamp: '11/06/2026 19:20', ip: '197.220.14.77' }
         ],
@@ -734,7 +756,7 @@ export function GovContactsContent({
         ],
         activityHistory: [
           { action: 'Bloqueio de Segurança Autorizado', timestamp: '10/06/2026 12:45', ip: 'Admin_Consola' },
-          { action: 'Acesso à Carteira Digital', timestamp: '09/06/2026 18:22', ip: '197.231.42.15' }
+          { action: 'Acesso à QR Code', timestamp: '09/06/2026 18:22', ip: '197.231.42.15' }
         ],
         facePhoto: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=250&h=250&fit=crop&crop=face',
         reason: 'Conta bloqueada administrativamente por solicitação do utilizador.'
@@ -928,12 +950,27 @@ export function GovContactsContent({
 
   const MUNICIPALITIES_BY_PROVINCE: { [key: string]: string[] } = {
     'Todas': ['Todos'],
-    'Luanda': ['Todos', 'Viana', 'Belas', 'Cazenga', 'Cacuaco', 'Luanda', 'Talatona', 'Kilamba Kiaxi', 'Maianga', 'Rangel', 'Ingombota'],
-    'Benguela': ['Todos', 'Benguela', 'Lobito', 'Catumbela', 'Baía Farta'],
-    'Huíla': ['Todos', 'Lubango', 'Chibia', 'Humpata', 'Caconda'],
-    'Cabinda': ['Todos', 'Cabinda', 'Cacongo', 'Buco-Zau'],
-    'Bengo': ['Todos', 'Dande', 'Ambriz', 'Nambuangongo'],
-    'Huambo': ['Todos', 'Huambo', 'Caála', 'Bailundo']
+    'Bengo': ['Todos', 'Dande', 'Ambriz', 'Nambuangongo', 'Bula Atumba', 'Pango Aluquem'],
+    'Icolo e Bengo': ['Todos', 'Icolo e Bengo', 'Cacabo', 'Kibala', 'Piri'],
+    'Benguela': ['Todos', 'Benguela', 'Lobito', 'Catumbela', 'Baía Farta', 'Ganda', 'Chongorói', 'Bocoio', 'Caimbambo'],
+    'Bié': ['Todos', 'Cuito', 'Cuatro', 'Chitembo', 'Andulo', 'Nharêa', 'Mucuma'],
+    'Cabinda': ['Todos', 'Cabinda', 'Cacongo', 'Buco-Zau', 'Dembo'],
+    'Cuando': ['Todos', 'Menongue', 'Cuchi', 'Cuangar', 'Cativos', 'Luchazes'],
+    'Cubango': ['Todos', 'Cubango', 'Cunje', 'Mavinga', 'Nekiemba', 'Rivungo'],
+    'Cuanza Norte': ['Todos', 'N\'Dalatando', 'Ambaca', 'Golungo Alto', 'Ngongui', 'Samba', 'Bula'],
+    'Cuanza Sul': ['Todos', 'Sumbe', 'Libolo', 'Quibala', 'Cela', 'Mussende', 'Soyo'],
+    'Cunene': ['Todos', 'Ondjiva', 'Cuanhama', 'Curoca', 'Namacunde', 'Ombadiya'],
+    'Huambo': ['Todos', 'Huambo', 'Caála', 'Bailundo', 'Catchiungo', 'Londuimbale', 'Longonjo', 'Ecunha'],
+    'Huíla': ['Todos', 'Lubango', 'Chibia', 'Humpata', 'Caconda', 'Kuvango', 'Matala', 'Caluquembe', 'Quilengues'],
+    'Luanda': ['Todos', 'Viana', 'Belas', 'Cazenga', 'Cacuaco', 'Talatona', 'Kilamba Kiaxi', 'Maianga', 'Rangel', 'Ingombota'],
+    'Lunda Norte': ['Todos', 'Dundo', 'Cambulo', 'Lóvua', 'Cuiloa', 'Zaire'],
+    'Lunda Sul': ['Todos', 'Saurimo', 'Muconda', 'Laculo', 'Cacolo'],
+    'Malanje': ['Todos', 'Malanje', 'Caculama', 'Quela', 'Mucari', 'Calandula', 'Cuaba', 'Marimba', 'Masseira'],
+    'Moxico': ['Todos', 'Luena', 'Moxico', 'Luchico', 'Cameia', 'Luahadi'],
+    'Moxico Leste': ['Todos', 'Luena', 'Lusavo', 'Mucunde', 'Lomelas'],
+    'Namibe': ['Todos', 'Namibe', 'Tombwa', 'Virei', 'Bibala', 'Camucuio'],
+    'Uíge': ['Todos', 'Uíge', 'Ambuila', 'Bungo', 'Damba', 'Macosine', 'Mucaba', 'Negage', 'Puri', 'Quimbo', 'Songo'],
+    'Zaire': ['Todos', 'Mbanza Congo', 'SoYo', 'N\'Zeto', 'Tomboco', 'Cuimba', 'Musserra']
   };
 
   // Addition Modal and Form States for workers
@@ -2756,7 +2793,7 @@ export function GovContactsContent({
                       <h4 className="text-xs font-black text-slate-800 uppercase tracking-tight">Monitorização de Atividade do Cidadão & IP Logs</h4>
                       <div className="bg-slate-50 border border-slate-200 rounded-2xl divide-y divide-slate-150 overflow-hidden text-left">
                         {(selectedReviewCitizen.activityHistory || [
-                          { action: 'Acesso à Carteira Digital e Despacho', timestamp: '12/06/2026 10:15', ip: '197.231.42.15' },
+                          { action: 'Acesso à QR Code e Despacho', timestamp: '12/06/2026 10:15', ip: '197.231.42.15' },
                           { action: 'Consulta de Correspondência Governamental', timestamp: '10/06/2026 14:22', ip: '197.231.40.89' },
                           { action: 'Download de Cédula de Nascimento Digital', timestamp: '08/06/2026 16:30', ip: '197.231.40.89' }
                         ]).map((log, idx) => (

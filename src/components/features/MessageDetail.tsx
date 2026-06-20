@@ -733,9 +733,10 @@ export function MessageDetail({
           ) : (
             <div className="space-y-6 text-slate-700 text-sm md:text-[15px] leading-relaxed tracking-wide font-sans">
               <p className="font-medium text-slate-700">
-                {t("Prezado(a) cidadão(ã),")}<br /><br />
-                {t(selectedMessage.preview) || t("Informamos que foi registada uma nova correspondência oficial associada à sua identidade digital no Correio Digital de Angola.")}<br /><br />
-                {t("Os serviços públicos integrados de telecomunicações e tecnologias digitais continuam a reforçar a proximidade dos cidadãos aos órgãos e instituições do Estado angolano com toda a segurança, autenticidade e validade legal garantida por lei.")}<br /><br />
+                {t("Exmo(a) Cidadão(ã),")}<br /><br />
+                {selectedMessage.preview || t("Informamos que foi registada uma nova correspondência oficial associada à sua identidade digital no Correio Digital de Angola.")}<br /><br />
+                {t("Para mais informações sobre esta correspondência, por favor contacte a instituição emissora diretamente ou aceda ao balcão de atendimento mais próximo.")}<br /><br />
+                {t("Nota: Este é um documento oficial do Estado angolano. Para qualquer esclarecimento adicional, contacte o número de suporte do Correio Digital de Angola.")}<br /><br />
                 {t("Atenciosamente,")}<br />
                 {t("Secretaria do Correio Digital Angola")}
               </p>
@@ -2055,9 +2056,10 @@ export function MessageDetail({
                     ) : (
                       <div className="space-y-6 text-slate-700 text-sm md:text-[15px] leading-relaxed tracking-wide font-sans">
                         <p className="font-medium text-slate-700">
-                          {t("Prezado(a) cidadão(ã),")}<br /><br />
-                          {t(selectedMessage.preview) || t("Informamos que foi registada uma nova correspondência oficial associada à sua identidade digital no Correio Digital de Angola.")}<br /><br />
-                          {t("Os serviços públicos integrados de telecomunicações e tecnologias digitais continuam a reforçar a proximidade dos cidadãos aos órgãos e instituições do Estado angolano com toda a segurança, autenticidade e validade legal garantida por lei.")}<br /><br />
+                          {t("Exmo(a) Cidadão(ã),")}<br /><br />
+                          {selectedMessage.preview || t("Informamos que foi registada uma nova correspondência oficial associada à sua identidade digital no Correio Digital de Angola.")}<br /><br />
+                          {t("Para mais informações sobre esta correspondência, por favor contacte a instituição emissora diretamente ou aceda ao balcão de atendimento mais próximo.")}<br /><br />
+                          {t("Nota: Este é um documento oficial do Estado angolano. Para qualquer esclarecimento adicional, contacte o número de suporte do Correio Digital de Angola.")}<br /><br />
                           {t("Atenciosamente,")}<br />
                           {t("Secretaria do Correio Digital Angola")}
                         </p>

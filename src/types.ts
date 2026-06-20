@@ -385,6 +385,25 @@ export interface VideoSession {
   closedAt?: string;
 }
 
+// Extended VideoSession with enhanced features
+export interface VideoSessionExtended extends VideoSession {
+  agenda?: string;
+  notes?: string;
+  duration?: number;
+  quality?: 'excellent' | 'good' | 'poor';
+  participantCount?: number;
+}
+
+// Video Session Notification
+export interface VideoSessionNotification {
+  id: string;
+  sessionId: string;
+  type: 'reminder' | 'status_change' | 'participant_update' | 'quality_alert';
+  message: string;
+  timestamp: string;
+  read: boolean;
+}
+
 export interface VideoSessionParticipant {
   id: string;
   sessionId: string;

@@ -351,10 +351,10 @@ export const CitizenProfile: React.FC<CitizenProfileProps> = ({
               </div>
 
               <button 
-                onClick={() => setTab('carteira')}
+                onClick={() => setTab('qr-code')}
                 className="w-full mt-4 py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all text-slate-700 flex items-center justify-center gap-1 cursor-pointer"
               >
-                Ver Carteira Digital
+                Ver QR Code
               </button>
             </div>
 

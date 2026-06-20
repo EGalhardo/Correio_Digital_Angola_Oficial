@@ -45,7 +45,11 @@ import {
   InstAiAssistantContent,
   GovIaContent,
   NotificationDetailModal,
+  VideoSessionPage,
 } from './components';
+
+// UI Components
+import { LazyImage } from './components/ui/LazyImage';
 
 // Constants & Types
 import { 
@@ -70,6 +74,7 @@ import { OfflineManager, OfflineAction } from './utils/offlineManager';
 import { supabaseService, hasValidSupabaseKeys, resolveInstitutionCode, resolveCitizenBi } from './services/supabaseService';
 import { supabase } from './lib/supabaseClient';
 import { useSession } from './services/sessionStore';
+import { VideoSessionService } from './services/videoSessionService';
 import { useLanguage } from './hooks/useLanguage';
 import { startImagePreloading, subscribeToPreload } from './utils/imagePreloader';
 import { shouldAutoSeedSupabase, shouldUseLocalBootstrap, shouldUseMockFallback } from './config/runtime';
@@ -753,6 +758,7 @@ export default function App() {
   }, [loginSubMode, appMode]);
   
   const [correspondenciaTab, setCorrespondenciaTab] = useState('naoLidas');
+  const [videoSessionCount, setVideoSessionCount] = useState(0);
   const [isComposing, setIsComposing] = useState(false);
   const [composeData, setComposeData] = useState<{ to: string; subject: string; body: string; attachments?: string[] }>({ to: '', subject: '', body: '', attachments: [] });
 
@@ -1406,7 +1412,7 @@ export default function App() {
       return uniques;
     });
 
-    // 6. Audit e De-duplicação de Documentos na Carteira Digital
+    // 6. Audit e De-duplicação de Documentos na QR Code
     setDocuments(prev => {
       const codes = new Set<string>();
       const uniques: Document[] = [];
@@ -1496,16 +1502,26 @@ export default function App() {
     const logMsg = `AUDITORIA_SISTEMA: Sincronização concluída. ${fixesCount} inconsistências resolvidas e ${dupesCount} registos duplicados consolidados para o cidadão ${profileName}.`;
     addAuditLog(logMsg, 'success');
 
-    // Emitir uma notificação oficial de sucesso
-    const checkNotif: AppNotification = {
-      id: Number(`99099${Math.floor(Math.random() * 1000)}`),
-      title: 'Auditoria CADA Concluída',
-      message: `Encontradas e corrigidas ${fixesCount} inconsistências leves e ${dupesCount} dados duplicados nos domínios. Base de dados certificada 100% íntegra.`,
-      time: 'Agora',
-      type: 'success',
-      targetTab: 'home'
-    };
-    setNotifications(prev => [checkNotif, ...prev]);
+    // Verificar se a auditoria já foi executada nesta sessão (evita duplicação)
+    const auditSessionKey = `cda_audit_completed_${bi}`;
+    const alreadyAudited = localStorage.getItem(auditSessionKey);
+    
+    // Apenas adiciona notificação se ainda não foi feita a auditoria nesta sessão
+    if (!alreadyAudited) {
+      // Marcar que a auditoria foi executada para esta sessão
+      localStorage.setItem(auditSessionKey, new Date().toISOString());
+      
+      // Emitir uma notificação oficial de sucesso (apenas uma vez por sessão)
+      const checkNotif: AppNotification = {
+        id: Number(`99099${Math.floor(Math.random() * 1000)}`),
+        title: 'Auditoria CADA Concluída',
+        message: `Encontradas e corrigidas ${fixesCount} inconsistências leves e ${dupesCount} dados duplicados nos domínios. Base de dados certificada 100% íntegra.`,
+        time: 'Agora',
+        type: 'success',
+        targetTab: 'home'
+      };
+      setNotifications(prev => [checkNotif, ...prev]);
+    }
   };
 
   // Lifecycle Effects
@@ -1513,7 +1529,13 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'instant' });
     
     // Executa a auditoria geral e sincronização completa dos dados da plataforma
-    runAuditAndSincronizacaoCompleta();
+    // Apenas executa se ainda não foi executada nesta sessão
+    const auditSessionKey = `cda_audit_completed_${bi}`;
+    const alreadyExecuted = localStorage.getItem(auditSessionKey);
+    
+    if (!alreadyExecuted) {
+      runAuditAndSincronizacaoCompleta();
+    }
 
     const timer = setTimeout(() => {
       setPageLoading(false);
@@ -1754,6 +1776,20 @@ export default function App() {
     }
   };
 
+  const handleNavigateToVideoAtendimento = () => {
+    // Load video session count before navigating
+    const loadVideoCount = async () => {
+      try {
+        const sessions = await VideoSessionService.listSessions();
+        const count = sessions.filter(s => s.status !== 'concluida' && s.status !== 'cancelada').length;
+        setVideoSessionCount(count);
+      } catch (e) {
+        console.warn('Failed to load video session count:', e);
+      }
+    };
+    loadVideoCount();
+    setTab('video-atendimento');
+  };
   const handleSendMessage = () => {
     if (!composeData.to || !composeData.subject || !composeData.body) return;
     
@@ -1810,6 +1846,9 @@ export default function App() {
         : supabaseService.sendCitizenMessage(newMessage, bi, composeData.to);
       sendPromise
         .then(async () => {
+          // Store protocol in database for QR code reference
+          await supabaseService.insertDigitalProtocol(protocol);
+          
           await supabaseService.insertMessageStateEvent({
             messageId,
             state: 'Enviada',
@@ -1901,6 +1940,9 @@ export default function App() {
         : supabaseService.sendCitizenMessage(newMessage, bi, docComposeData.to);
       sendPromise
         .then(async () => {
+          // Store protocol in database for QR code reference
+          await supabaseService.insertDigitalProtocol(protocol);
+          
           await supabaseService.insertMessageStateEvent({
             messageId,
             state: 'Enviado',
@@ -2016,7 +2058,7 @@ export default function App() {
       unread: 1,
       details: {
         subject: `Emissão de ${doc.name}`,
-        body: `Prezado(a) ${doc.holder},\n\nInformamos que um novo documento (${doc.name}) foi emitido pela nossa instituição e já se encontra disponível na sua Carteira Digital.\n\nCódigo de Autenticação: ${doc.code}\nData de Emissão: ${doc.issuedAt}\n\nEste é um procedimento automático do Correio Digital de Angola.`,
+        body: `Prezado(a) ${doc.holder},\n\nInformamos que um novo documento (${doc.name}) foi emitido pela nossa instituição e já se encontra disponível na sua QR Code.\n\nCódigo de Autenticação: ${doc.code}\nData de Emissão: ${doc.issuedAt}\n\nEste é um procedimento automático do Correio Digital de Angola.`,
         attachments: [doc.name],
         actions: ['Ver na Carteira', '__DOC__']
       }
@@ -2124,6 +2166,14 @@ Total de correspondências na caixa de entrada: ${inbox.length} mensagens, das q
 Aqui estão algumas correspondências em destaque no ecrã:
 ${messagesSummary || 'Nenhuma mensagem recente.'}`;
       
+      case 'video-atendimento':
+        return (
+          <VideoSessionPage
+            onBack={() => setTab('correspondencias')}
+            onNavigateToMail={() => setTab('correspondencias')}
+            addAuditLog={addAuditLog}
+          />
+        );
       case 'documentos':
         const docUnreadCount = docInbox.filter(m => m.status === 'Não Lida').length;
         const docMessagesSummary = docInbox.slice(0, 3).map(m => `- Serviço: ${m.sender || m.org}, Assunto: ${m.subject || m.preview}, Status: ${m.status}`).join('\n');
@@ -2133,9 +2183,9 @@ Você tem ${docInbox.length} itens recebidos nas suas tramitações, sendo ${doc
 Últimas tramitações na tela:
 ${docMessagesSummary || 'Nenhum documento de trâmite pendente.'}`;
       
-      case 'carteira':
+      case 'qr-code':
         const docsSummary = documents.map(d => `- ${d.name} (Número: ${d.number || 'Não Aplicável'})`).join('\n');
-        return `Você está na Carteira Digital Offline e Segura.
+        return `Você está na QR Code Offline e Segura.
 Nela estão armazenados eletronicamente os seguintes documentos civis do cidadão ${profileName}:
 ${docsSummary || 'Nenhum documento adicionado.'}
 As credenciais têm assinatura criptográfica ativa e um código QR de integridade visualizado para validação por fiscais de estado.`;
@@ -2228,7 +2278,7 @@ Ficha civil do titular:
         unread: 1,
         details: {
           subject: `${request.docType} Aprovado`,
-          body: `Prezado(a) ${request.userName},\n\nA sua solicitação para a emissão do documento ${request.docType} foi analisada e aprovada com sucesso.\n\nO documento já se encontra disponível na sua Carteira Digital para consulta e utilização oficial.`,
+          body: `Prezado(a) ${request.userName},\n\nA sua solicitação para a emissão do documento ${request.docType} foi analisada e aprovada com sucesso.\n\nO documento já se encontra disponível na sua QR Code para consulta e utilização oficial.`,
           actions: ['Ver na Carteira', '__DOC__']
         }
       };
@@ -2260,7 +2310,7 @@ Ficha civil do titular:
           title: 'Documento Aprovado',
           message: `O seu pedido de ${request.docType} foi aprovado e emitido.`,
           type: 'success',
-          targetTab: 'carteira'
+          targetTab: 'qr-code'
         }, request.userBi).catch(err => console.error(err));
       }
       
@@ -2368,7 +2418,17 @@ Ficha civil do titular:
             onDeleteMessage={handleDeleteMessage}
             onRestoreMessage={handleRestoreMessage}
             deletedMessageIds={deletedMessageIds}
+            onNavigateToVideoAtendimento={handleNavigateToVideoAtendimento}
+            videoSessionCount={videoSessionCount}
             currentLanguage={currentLanguage}
+          />
+        );
+      case 'video-atendimento':
+        return (
+          <VideoSessionPage
+            onBack={() => setTab('correspondencias')}
+            onNavigateToMail={() => setTab('correspondencias')}
+            addAuditLog={addAuditLog}
           />
         );
       case 'documentos':
@@ -2408,7 +2468,7 @@ Ficha civil do titular:
             isDeleted={deletedMessageIds.includes(selectedMessage.id)}
           />
         );
-      case 'carteira':
+      case 'qr-code':
         if (isInstMode) {
           return (
           <GovDocsContent 
@@ -2679,6 +2739,9 @@ Ficha civil do titular:
                 try {
                   // 5. Send/persist official message in 'messages' table with correct recipient_bi
                   await supabaseService.sendOfficialMessage(finalMessageObj, resolvedBi, newCor.sender);
+
+                  // 5.1 Store protocol for QR code reference
+                  await supabaseService.insertDigitalProtocol(protocol);
 
                   // 6. Create citizen notification linked to their correct target_bi
                   await supabaseService.insertNotification({
@@ -2962,10 +3025,19 @@ Ficha civil do titular:
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="text-center z-10 w-full max-w-md px-8"
         >
-          <img 
+          <LazyImage 
             src="https://i.postimg.cc/cCkwskty/Logomarca-Correio-Digital.png" 
             alt="Correio Digital Logo" 
+            priority={true}
+            placeholder="skeleton"
             className="w-64 md:w-80 h-auto mx-auto mb-12"
+            style={{ 
+              width: '16rem', 
+              height: 'auto',
+              marginBottom: '3rem',
+              marginLeft: 'auto',
+              marginRight: 'auto',
+            }}
           />
           <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden border border-slate-100">
             <motion.div 
@@ -3127,9 +3199,11 @@ Ficha civil do titular:
               </motion.div>
             ) : (
               <div className="flex flex-col items-center relative z-10">
-                <img 
+                <LazyImage
                   src="https://i.postimg.cc/cCkwskty/Logomarca-Correio-Digital.png" 
                   alt="Correio Digital" 
+                  priority={true}
+                  placeholder="skeleton"
                   className={loginSubMode === 'face-capture' ? "w-48 h-auto mb-4" : "w-72 h-auto mb-8"}
                 />
                 <h1 className={`${loginSubMode === 'face-capture' ? 'text-xl md:text-2xl mb-2' : 'text-2xl md:text-3xl mb-4'} font-black text-slate-900 leading-tight italic uppercase tracking-tight`}>
@@ -3344,7 +3418,7 @@ Ficha civil do titular:
                           onClick={() => {
                             setLoginSubMode('register');
                           }}
-                          className="text-slate-605 hover:text-[#0c2340] transition-colors bg-transparent border-none cursor-pointer text-[10px] font-black uppercase tracking-widest font-sans flex items-center gap-1.5"
+                          className="text-slate-600 hover:text-[#0c2340] transition-colors bg-transparent border-none cursor-pointer text-[10px] font-black uppercase tracking-widest font-sans flex items-center gap-1.5"
                         >
                           <UserPlus size={14} className="text-[#2563eb]" />
                           {t("Registar")}
@@ -3687,7 +3761,7 @@ Ficha civil do titular:
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="fixed inset-x-4 bottom-4 md:bottom-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:max-w-md bg-white rounded-[32px] shadow-2xl z-[301] overflow-hidden border border-slate-100 text-left font-sans flex flex-col max-h-[85vh]"
+                className="fixed inset-x-4 bottom-4 md:bottom-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:max-w-sm bg-white rounded-[32px] shadow-2xl z-[301] overflow-hidden border border-slate-100 text-left font-sans flex flex-col max-h-[85vh]"
               >
                 {/* Header */}
                 <div className="bg-gradient-to-r from-slate-900 to-indigo-950 p-6 text-white relative">
@@ -3816,7 +3890,7 @@ Ficha civil do titular:
         currentLanguage={currentLanguage}
       />
 
-      <div className="flex-1 md:bg-white md:rounded-[24px] md:shadow-xl md:border border-line/60 md:overflow-hidden flex flex-col min-h-screen md:min-h-0 relative">
+      <div className="flex-1 md:bg-white md:rounded-[24px] md:shadow-xl md:border-2 md:border-[#D1D5DB] md:overflow-hidden flex flex-col min-h-screen md:min-h-0 relative">
         <div className={emergencyMode && isGovMode ? 'md:mt-0' : ''}>
           <Header 
             setTab={setTab} 
@@ -3951,7 +4025,7 @@ Ficha civil do titular:
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-[32px] border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden text-left"
+              className="bg-white rounded-[32px] border border-slate-200 shadow-2xl w-full max-w-sm overflow-hidden text-left mx-3"
             >
               <div className="p-5 bg-slate-950 text-white flex justify-between items-center">
                 <div className="flex items-center gap-2.5">
@@ -3972,12 +4046,12 @@ Ficha civil do titular:
                 </button>
               </div>
 
-              <div className="p-6 space-y-6">
+              <div className="p-4 space-y-4">
                 {/* Simulated Switch toggle */}
                 <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex items-center justify-between">
                   <div className="font-sans block text-left">
                     <span className="font-bold text-xs text-slate-800 block">Simular Perda de Internet</span>
-                    <span className="text-[10px] text-slate-400 leading-tight block mt-0.5">Simula emulador de offline para testar cache, fallbacks SMS/USSD e sincronização.</span>
+                    <span className="text-[10px] text-slate-400 leading-tight block mt-0.5">Teste de cache, fallbacks SMS/USSD.</span>
                   </div>
 
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -3999,7 +4073,7 @@ Ficha civil do titular:
                 {/* Queue details */}
                 <div className="space-y-2 text-left">
                   <div className="flex justify-between items-center font-sans">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Fila de Ações Locais ({offlineQueue.length})</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Fila de Ações ({offlineQueue.length})</span>
                     <button
                       type="button"
                       onClick={() => {
@@ -4009,23 +4083,23 @@ Ficha civil do titular:
                       }}
                       className="text-[9px] font-bold text-rose-600 hover:underline uppercase tracking-wide cursor-pointer"
                     >
-                      Limpar Fila
+                      Limpar
                     </button>
                   </div>
 
                   {offlineQueue.length === 0 ? (
-                    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 text-center text-slate-400 font-sans">
-                      <Database className="mx-auto text-slate-300 mb-2" size={24} />
-                      <p className="text-xs font-semibold">Nenhuma ação pendente na fila.</p>
-                      <p className="text-[10px] mt-0.5 leading-relaxed">Qualquer ação efetuada (mensagens, solicitações, contactos) enquanto offline será enfileirada aqui para posterior sincronização.</p>
+                    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 text-center text-slate-400 font-sans">
+                      <Database className="mx-auto text-slate-300 mb-2" size={22} />
+                      <p className="text-[11px] font-semibold">Nenhuma ação pendente.</p>
+                      <p className="text-[9px] mt-0.5 leading-relaxed">Ações offline serão sincronizadas automaticamente.</p>
                     </div>
                   ) : (
-                    <div className="max-h-40 overflow-y-auto space-y-1.5 border border-slate-100 bg-slate-50 rounded-2xl p-2.5">
+                    <div className="max-h-32 overflow-y-auto space-y-1.5 border border-slate-100 bg-slate-50 rounded-2xl p-2.5">
                       {offlineQueue.map((item) => (
                         <div key={item.id} className="p-2 bg-white rounded-lg border border-slate-150 flex items-center justify-between text-left font-sans">
                           <div>
                             <span className="text-[10px] font-bold text-slate-800 block uppercase font-mono">{item.type}</span>
-                            <span className="text-[9px] text-slate-400 block mt-0.5">{new Date(item.timestamp).toLocaleTimeString('pt-AO')} &bull; ID: {item.id.substring(0, 10)}</span>
+                            <span className="text-[9px] text-slate-400 block mt-0.5">{new Date(item.timestamp).toLocaleTimeString('pt-AO')}</span>
                           </div>
                           <span className="text-[8px] bg-amber-100 border border-amber-200 text-amber-800 font-extrabold uppercase px-1.5 py-0.5 rounded-full font-mono">Pendente</span>
                         </div>
@@ -4036,15 +4110,12 @@ Ficha civil do titular:
 
                 {/* Channel Redundancy Info */}
                 <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-4 font-sans text-left">
-                  <span className="text-xs font-extrabold text-[#1e293b] flex items-center gap-1.5 uppercase tracking-wide">
-                    <Signal size={14} className="text-primary animate-pulse" /> Canais Redundantes Governamentais
+                  <span className="text-[11px] font-extrabold text-[#1e293b] flex items-center gap-1.5 uppercase tracking-wide">
+                    <Signal size={14} className="text-primary animate-pulse" /> Canais Redundantes
                   </span>
-                  <p className="text-[10px] text-slate-500 leading-relaxed mt-1.5 font-semibold">
-                    Caso a internet móvel (Unitel/Movicel) falhe durante o preenchimento de documentos:
-                  </p>
-                  <ul className="text-[10px] text-slate-500 font-bold space-y-1.5 mt-2 list-disc pl-4 leading-normal">
-                    <li><strong className="text-primary">Sms Fallback:</strong> Os dados são compactados em payload seguro e direcionados para o número curto governamental.</li>
-                    <li><strong className="text-primary">Código USSD (*141*9#):</strong> Permite verificar certidões e assinar trâmites com chave física sem qualquer plano de internet ativo.</li>
+                  <ul className="text-[10px] text-slate-500 font-bold space-y-1 mt-2 list-disc pl-4 leading-normal">
+                    <li><strong className="text-primary">SMS:</strong> Dados compactados para número curto governamental.</li>
+                    <li><strong className="text-primary">USSD:</strong> Código *141*9# para certidões sem internet.</li>
                   </ul>
                 </div>
               </div>
@@ -4054,7 +4125,7 @@ Ficha civil do titular:
                 <button
                   type="button"
                   onClick={() => setShowOfflineManagerWidget(false)}
-                  className="flex-1 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold text-xs uppercase rounded-xl hover:bg-slate-100 cursor-pointer"
+                  className="flex-1 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold text-[10px] uppercase tracking-widest rounded-xl hover:bg-slate-100 cursor-pointer"
                 >
                   Fechar
                 </button>
@@ -4065,14 +4136,14 @@ Ficha civil do titular:
                     handleAutomaticSync();
                     setShowOfflineManagerWidget(false);
                   }}
-                  className={`flex-1 py-2.5 font-bold text-xs uppercase rounded-xl flex items-center justify-center gap-1 cursor-pointer border-0 ${
+                  className={`flex-1 py-2.5 font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1 cursor-pointer border-0 ${
                     offlineQueue.length > 0 
                       ? 'bg-primary text-white hover:opacity-95 shadow-md' 
                       : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                   }`}
                 >
-                  <RefreshCw size={14} className="animate-spin" />
-                  Sincronizar Agora
+                  <RefreshCw size={12} className={offlineQueue.length > 0 ? 'animate-spin' : ''} />
+                  Sincronizar
                 </button>
               </div>
             </motion.div>
@@ -4088,7 +4159,7 @@ Ficha civil do titular:
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: -20 }}
-              className="bg-white rounded-[32px] border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden text-left my-8"
+              className="bg-white rounded-[32px] border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden text-left mx-4 my-8"
             >
               <div className="p-6 bg-gradient-to-r from-blue-900 to-indigo-950 text-white relative">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl font-sans"></div>
@@ -4110,8 +4181,8 @@ Ficha civil do titular:
                 </button>
               </div>
 
-              <div className="p-6 space-y-5">
-                <p className="text-slate-600 text-xs text-center leading-relaxed font-semibold font-sans">
+              <div className="p-5 space-y-4">
+                <p className="text-slate-600 text-[11px] text-center leading-relaxed font-semibold font-sans px-2">
                   A correspondência governamental foi autenticada e enviada! O sistema gerou o selo digital oficial com QR Code de rastreio integrado abaixo.
                 </p>
 
@@ -4127,10 +4198,10 @@ Ficha civil do titular:
 
                   {/* QR Canvas Container */}
                   <div className="bg-white p-3.5 rounded-2xl border border-slate-150 shadow-sm relative flex items-center justify-center">
-                    <canvas id="protocol-qrcode-canvas" className="w-[170px] h-[170px]" />
+                    <canvas id="protocol-qrcode-canvas" className="w-[140px] h-[140px]" />
                     {/* Inner secure shield icon overlay for gorgeous layout */}
-                    <div className="absolute w-10 h-10 rounded-lg bg-slate-900 border border-slate-705 flex items-center justify-center text-white shadow-md top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                      <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                    <div className="absolute w-8 h-8 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-white shadow-md top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
                     </div>
                   </div>
 
@@ -4169,7 +4240,14 @@ Ficha civil do titular:
               </div>
 
               {/* Action buttons */}
-              <div className="p-6 bg-slate-50 border-t border-slate-150 flex flex-col sm:flex-row gap-2 font-sans">
+              <div className="p-4 bg-slate-50 border-t border-slate-150 flex flex-col gap-2 font-sans">
+                <button
+                  type="button"
+                  onClick={() => setSuccessProtocolModal(null)}
+                  className="w-full py-3 bg-primary text-white font-extrabold text-[10px] uppercase tracking-widest rounded-xl hover:opacity-95 shadow-md shadow-primary/10 cursor-pointer text-center active:scale-[0.98] transition-all border-0 font-sans"
+                >
+                  Concluir Envio
+                </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -4183,17 +4261,10 @@ Ficha civil do titular:
                       addAuditLog(`Selo do Protocolo ${successProtocolModal.protocolNumber} exportado para impressão física`, 'success');
                     }
                   }}
-                  className="flex-1 py-3 bg-white border border-slate-200 text-slate-700 font-extrabold text-xs uppercase rounded-xl hover:bg-slate-100 cursor-pointer flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98] transition-all"
+                  className="w-full py-2.5 bg-white border border-slate-200 text-slate-600 font-extrabold text-[10px] uppercase tracking-widest rounded-xl hover:bg-slate-100 cursor-pointer flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98] transition-all"
                 >
-                  <ArrowLeft size={14} className="rotate-90 text-indigo-600 translate-y-[-0.5px]" />
-                  Descarregar Selo Oficial
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSuccessProtocolModal(null)}
-                  className="flex-1 py-3 bg-primary text-white font-extrabold text-xs uppercase rounded-xl hover:opacity-95 shadow-md shadow-primary/10 cursor-pointer text-center active:scale-[0.98] transition-all border-0 font-sans"
-                >
-                  Concluir Envio
+                  <ArrowLeft size={12} className="rotate-90 text-indigo-600" />
+                  Descarregar Selo
                 </button>
               </div>
             </motion.div>
